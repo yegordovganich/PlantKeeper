@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS `plantkeeper_version` (
 `version` int(10) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-INSERT INTO `plant_keeper_version` (`version`) VALUES (0);
+INSERT INTO `plantkeeper_version` (`version`) VALUES (1);
 
 CREATE TABLE IF NOT EXISTS `families` (
 `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -53,6 +53,6 @@ CONSTRAINT `FK_plants_families` FOREIGN KEY (`family_id`) REFERENCES `families` 
 CONSTRAINT `FK_plants_leaf_colors` FOREIGN KEY (`leaf_color_id`) REFERENCES `colors` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
 CONSTRAINT `FK_plants_bud_colors` FOREIGN KEY (`bud_color_id`) REFERENCES `colors` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
 CONSTRAINT `FK_plants_leaf_types` FOREIGN KEY (`leaf_type_id`) REFERENCES `leaf_types` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
-CONSTRAINT `FK_plants_families` FOREIGN KEY (`care_plan_id`) REFERENCES `care_plans` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
+CONSTRAINT `FK_plants_plans` FOREIGN KEY (`care_plan_id`) REFERENCES `care_plans` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
