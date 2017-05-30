@@ -1,0 +1,222 @@
+import flowutils;
+import admin_panel/authentication/model;
+import meta_app/utils;
+import plantkeeper/config;
+import generated/plantkeeper_state;
+import generated/plantkeeper_homeview;
+import feedback/feedback/feedback;
+import meta_app/version;
+
+// This file is generated. Minimize manual changes to make regeneration easy
+
+main() {
+	title = "Plantkeeper";
+
+	setPictureServerURL(getBaseAppUrl());
+	setAppUrl(getBaseAppUrl());
+	setAppSalt("X0x5Mfuu4836vAT2PuXeOMNb30PVY96j"); // This salt should match the salt in the PHP config file
+	setSecurityMode(getAppSecurityModes());
+	setWindowTitle(title);
+
+	feedbackOptions = MFeedbackOptions("", saveFeedback, showFeedbacks);
+	mManager = makeMaterialManager([feedbackOptions]);
+
+	loginLoadStateAndBuildApp(mManager, feedbackOptions, [])
+}
+
+// Main window of the application
+appB : DynamicBehaviour<Material> = make(TEmpty());
+
+// Standard error message that will be covering entire window
+showError(error : string) -> void {
+	onErrorWithVersionCheck(\displayedMsg -> {
+		next(appB, TEmpty());
+		println("Error: " + error);
+		next(appB, ErrorBlock(displayedMsg))
+	})("Something went wrong. Contact the developers");
+}
+
+loginLoadStateAndBuildApp(mManager : MaterialManager, feedbackOptions : MFeedbackOptions, extraFlags : [MOAuthFlags]) -> void {
+	us = ref \-> {};
+
+	run = \-> authenticateAndBuildModel(
+		getOAuthSettings(extraFlags),
+		mManager,
+		\authModel -> {
+			// Successful authentication
+			feedbackOptions.jwt ::= authModel.userInfo.jwt;
+			// Note, we need to call render after feedback options are set to the right JWT
+			us := mrender(mManager, true, MMutable(appB));
+
+			loadStateAndBuildApp(mManager, authModel, feedbackOptions);
+		},
+		\-> {
+			next(appB, LoadingBlock());
+			// Disposer will be called after every re-login.
+			// After current session is over and we need to rebuild application
+			(^us)();
+		},
+		\error -> {
+			// Error during authentication
+			us := mrender(mManager, true, MMutable(appB));
+
+			showError("Something went wrong. Contact the developers")
+		}
+	);
+
+	run()
+}
+
+loadStateAndBuildApp(mManager : MaterialManager, authModel : AuthenticationModel, feedbackOptions : MFeedbackOptions) -> void {
+	loadPlantkeeperState(
+		authModel.userInfo,
+		mManager,
+		\state : PlantkeeperState -> {
+			// state loaded
+			app = buildAppStructureForUser("Plantkeeper", authModel, state, mManager, feedbackOptions);
+
+			next(appB, app)
+		},
+		showError
+	)
+}
+
+buildAppStructureForUser(title : string, authModel : AuthenticationModel, state : PlantkeeperState, mManager : MaterialManager, feedbackOptions : MFeedbackOptions) -> Material {
+	expanderB = make(false);
+
+	lastUpdatedB = make("");
+	getBuildTimeStamp(\ts -> {
+		next(lastUpdatedB, ts);
+	}, \-> {});
+
+	menuItems =
+		[
+			[
+				MSingleLine("Home", [MPrimaryAction(MIcon("home", [])), MOnClick(\ -> {
+					next(expanderB, false);
+					displayNewPlantkeeperContent(state, "home view", "", buildPlantkeeperHomeView);
+				})])
+			],
+			if (isAdmin(authModel.userInfo)) {
+				[
+					MSingleLine("Admin panel", [MPrimaryAction(MIcon("settings", [])), MOnClick(\ -> {
+						next(expanderB, false);
+						displayNewPlantkeeperContent(state, "admin panel", "Admin panel", buildPlantkeeperAdminView);
+					})])
+				]
+			} else {
+				[]
+			},
+			[
+				MSingleLine("My account", [MPrimaryAction(MIcon("account_circle", [])), MOnClick(\ -> {
+					next(expanderB, false);
+					authModel.showProfileDialogFn();
+				})]),
+				MSingleLine("Logout", [MPrimaryAction(MIcon("power_settings_new", [])), MOnClick(\ -> {
+					next(expanderB, false);
+					authModel.logoutFn([]);
+				})]),
+				MCustomLine(TFillXY(), [])
+			]
+		];
+
+	toolbarItems = 
+		[
+			[
+				MMutable(state.headerContentB),
+				TFillX(),
+				MIconButton("sync", \-> loadStateAndBuildApp(mManager, authModel, feedbackOptions), [], [])
+			],
+			if (isAdmin(authModel.userInfo)) {
+				[MIconButton("settings", \-> displayNewPlantkeeperContent(state, "settings", "Admin panel", buildPlantkeeperAdminView), [], [])]
+			} else {
+				[TEmpty]
+			}
+		];
+
+	// open home view by default
+	displayNewPlantkeeperContent(state, "home view", "", buildPlantkeeperHomeView);
+
+	MAppStructure(
+		[
+			MSideNav(
+				authModel.userPanel,
+				MList(menuItems |> concatA, [], []),
+				expanderB,
+				[MSubList(
+					MLines([
+						TFillXY(),
+						MBorder(16.0, 0.0, 0.0, 8.0,
+							MSelect(lastUpdatedB, \ts -> {
+								if (ts == "") {
+									MEmpty()
+								} else {
+									MText("Last updated: " + ts, [MGrey(700)])
+								}
+							})
+						)
+					])
+				)]
+			) |> (\f -> MLeftNav(f, expanderB, [])),
+
+			MToolbar(
+				expanderB,
+				MCols([
+					MCenterY(
+						MIconButton("keyboard_backspace", \ -> displayPrevPlantkeeperContent(state), [MWhite()], [
+							MEnabled(fselect(state.contentStackB, FLift(\stack -> length(stack) > 1)))
+						])
+					),
+					MSelect(state.headerNameB, \header -> {
+						title2 = if (header == "") title else {	title + " | " + header };
+						MCenterY(MText(title2, [MTitle(), MWhite()]))
+					})
+				]),
+				toolbarItems |> concatA,
+				[
+					MGreen(500),
+				]
+			) |> MAppBar,
+
+			MContent(
+				MMutable(state.contentB)
+			)
+		],
+		[MNoContentBorder()]
+	)
+}
+
+getBuildTimeStamp(callback : (string) -> void, onError : () -> void) -> void {
+	parameters = [
+		KeyValue("operation", "getTimeStamp"),
+	];
+
+	onError2 = \err -> {
+		println(err);
+		onError();
+	};
+
+	oauthDatawarpRequest("/php/util.php", true, [], parameters, \result -> {
+		if (startsWith(result, "OK\n")) {
+			json = strRight(result, 3);
+			ts = getJsonStringValue(parseJson(json), "");
+			ms = s2d(ts) * 1000.;
+
+			callback(time2string(ms));
+		} else {
+			onError2("Error get jwt: " + result);
+		}
+	}, onError2, nop1);
+}
+
+onErrorWithVersionCheck(onError : (string) -> void) -> ((string) -> void) {
+	handleErrorForVersion("#include ./data2/version.json", onError)
+}
+
+checkIfUpToDate(onOldVersion : () -> void, onError : (string) -> void) -> void {
+	isVersionTokenActual(
+		"#include ./data2/version-token",
+		\uptodate -> if (uptodate) {} else onOldVersion(),
+		onError
+	)
+}

@@ -1,0 +1,14 @@
+{
+	"folders":
+	[
+		{
+			"path": "."
+		},
+		{
+			"path": "../flow/"
+		},
+		{
+			"path": "../material/"
+		}
+	]
+}

@@ -1,0 +1,47 @@
+import oauth/oauth_material;
+import formats/uri/uri;
+
+// This file is generated. Minimize manual changes to make regeneration easy
+export {
+	getBaseAppUrl() -> string;
+	getOAuthSettings(extraFlags : [MOAuthFlags]) -> MOAuthSettings;
+	getAppSecurityModes() -> [SecurityMode];
+}
+
+getBaseAppUrl() -> string {
+	if (cpp) {
+		// only for local testing. use relative paths for server
+		url = getUrlParameter("url");
+		baseUrl =
+			if (url != "") {
+				correctUrl(url)
+			} else if (mobile) {
+				"https://tech.area9innovation.com/plantkeeper/"
+			} else {
+				port = getUrlParameter("port");
+				if (port != "") {
+					"http://localhost:" + port + "/"
+				} else {
+					"http://localhost:80/"
+				}
+			};
+
+		baseUrl + "plantkeeper/"
+	} else {
+		"./"
+	}
+}
+
+getAppSecurityModes() -> [SecurityMode] {
+	[]
+}
+
+getOAuthSettings(extraFlags : [MOAuthFlags]) -> MOAuthSettings {
+	MOAuthSettings(
+		getBaseAppUrl(), 
+		[],
+		concat([RememberMe("plantkeeper"), ], extraFlags),
+		nop1,
+		nop1
+	);
+}
