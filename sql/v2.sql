@@ -14,9 +14,9 @@ INSERT INTO `plant_colors`(`name`, `color_number`, `color_type_id`) VALUES ('Lig
 INSERT INTO `plant_colors`(`name`, `color_number`, `color_type_id`) VALUES ('Salmon', '#FA8072', 2);
 INSERT INTO `plant_colors`(`name`, `color_number`, `color_type_id`) VALUES ('Olive', '#808000', 3);
 
-INSERT INTO `leaf_types`(`name`, `description`) VALUES ('Simple', 'single leaf on a branch');
-INSERT INTO `leaf_types`(`name`, `description`) VALUES ('Compound', 'group of leaves');
-INSERT INTO `leaf_types`(`name`, `description`) VALUES ('Opposite leaves', 'two opposite leaves on a branch');
+INSERT INTO `leaf_types`(`id`, `name`, `description`) VALUES (1, 'Simple', 'single leaf on a branch');
+INSERT INTO `leaf_types`(`id`, `name`, `description`) VALUES (2, 'Compound', 'group of leaves');
+INSERT INTO `leaf_types`(`id`, `name`, `description`) VALUES (3, 'Opposite leaves', 'two opposite leaves on a branch');
 
 INSERT INTO `care_plans`(`name`, `description`, `pour`, `light`, `turn`, `tempreture`, `spray`, `wipe_leaves`) 
 	VALUES ('Common 1', 'An example of simple common care plan', 2, 1, 1, 21, 1, 0.5);
