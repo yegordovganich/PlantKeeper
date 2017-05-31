@@ -1,6 +1,5 @@
-import generated/plantkeeper_tables;
 import plantkeeper/custom/dialogs;
-import plantkeeper/utils;
+import substantiate/subtable_styles;
 
 export {
 	PlantColorTableCustom(

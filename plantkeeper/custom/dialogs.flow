@@ -1,9 +1,12 @@
-import generated/plantkeeper_tables;
+import generated/plantkeeper_database;
+import meta_app/utils;
 import plantkeeper/utils;
 
 export {
 	onAddPlantColorCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>,  defaultPlantColor : () -> PlantColor, callback : (PlantColor) -> void, onError : (string) -> void) -> void;
 	onEditPlantColorCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (PlantColor) -> bool, onError : (string) -> void) -> void;
+
+	editLeafTypeDataCustom(manager : MaterialManager, _leafType : LeafType, onSave : (LeafType) -> void, onCancel : () -> void) -> Material;
 }
 
 onAddPlantColorCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>,  defaultPlantColor : () -> PlantColor, callback : (PlantColor) -> void, onError : (string) -> void) -> void {
@@ -93,6 +96,57 @@ editPlantColorDataCustom(manager : MaterialManager, _plantColor : PlantColor, co
 			TFixed(0.0, 16.0),
 			MAvailable(
 				MCols(concat([TFillXY()], _plantColor_actions)),
+				TGroup2(
+					TFixed(256.0, 0.0),
+					TScale(const(Factor(1.0, 0.0)), TGhost("body"))
+				)
+			)
+		])
+	);
+}
+
+editLeafTypeDataCustom(manager : MaterialManager, _leafType : LeafType, onSave : (LeafType) -> void, onCancel : () -> void) -> Material {
+	
+	_leafType_name = make(_leafType.name);
+	_leafType_description = make(_leafType.description);
+	_leafType_picture = make(_leafType.picture);
+
+	_leafType_actions = [
+		MTextButton(_("CANCEL"), \ -> {onCancel()}, [MBlue(500)], [MShortcut("esc"), MEnabled(const(true))]),
+		MTextButton(_("SAVE"), \ -> {onSave(LeafType(_leafType.id, _leafType_name |> fgetValue, _leafType_description |> fgetValue, _leafType_picture |> fgetValue))}, [MBlue(500), MButtonRaised], [MShortcut(""), MEnabled(const(true))]),
+	];
+
+	_leafType_view = MBorder(16.0, 16.0, 0.0, 0.0, 
+		MLines([
+			MText(_("Leaf Type"), [MTitle]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("name", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MTextInput(_leafType_name, [MLabel(_("Name")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
+			]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("description", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MTextInput(_leafType_description, [MLabel(_("Description")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
+			]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("image", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MTextInput(_leafType_picture, [MLabel(_("Picture")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
+			]),
+			TFixed(0.0, 8.0),
+			MZoom(MSelect(_leafType_picture, \url -> MPicture(url, [MPictureShowLoading(true)])), TFixed(160.0, 160.0), true)
+	]));
+
+	MLet("body", _leafType_view,
+		MLines([
+			TDisplay("body"),
+			TFixed(0.0, 16.0),
+			MAvailable(
+				MCols(concat([TFillXY()], _leafType_actions)),
 				TGroup2(
 					TFixed(256.0, 0.0),
 					TScale(const(Factor(1.0, 0.0)), TGhost("body"))

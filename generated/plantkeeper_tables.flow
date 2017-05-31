@@ -7,6 +7,8 @@ import material/material_dialog;
 import substantiate/subtable_styles;
 import meta_app/utils;
 import admin_panel/generated/admin_panel_tables;
+import plantkeeper/custom/dialogs;
+
 
 export {
 	FamilyTable(
@@ -850,7 +852,7 @@ onAddLeafType(manager : MaterialManager, jwt : string, leafTypes : DynamicBehavi
 			MDialogUseFrame(),
 			MDialogScroll(),
 		],
-		editLeafTypeData(manager, _leafType, onAdd, onCancel)
+		editLeafTypeDataCustom(manager, _leafType, onAdd, onCancel)
 	);
 }
 
@@ -872,7 +874,7 @@ onEditLeafType(manager : MaterialManager, jwt : string, leafTypes : DynamicBehav
 				MDialogActions([]),
 				MDialogScroll(),
 			],
-			editLeafTypeData(manager, getValue(leafTypes)[index], onLeafTypeEdit, onCancel)
+			editLeafTypeDataCustom(manager, getValue(leafTypes)[index], onLeafTypeEdit, onCancel)
 		);
 	}
 }
