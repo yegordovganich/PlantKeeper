@@ -3,6 +3,7 @@ forbid plantkeeper/config;
 import promise;
 
 import generated/plantkeeper_tables;
+import plantkeeper/custom_tables;
 import oauth/generated/oauth_dbstate;
 import admin_panel/generated/admin_panel_dbstate;
 
@@ -137,7 +138,7 @@ buildColorTypeTable(manager : MaterialManager, jwt : string, plantkeeperDbState 
 }
 
 buildPlantColorTable(manager : MaterialManager, jwt : string, plantkeeperDbState : PlantkeeperDbState, style : [SubTableStyle<PlantColor, ?>]) -> Material {
-	PlantColorTable(
+	PlantColorTableCustom(
 		manager,
 		jwt, 
 		plantkeeperDbState.plantColorsB,

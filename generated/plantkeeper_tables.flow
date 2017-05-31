@@ -60,6 +60,10 @@ export {
 			carePlans : DynamicBehaviour<[CarePlan]>,
 			style : [SubTableStyle<Plant, ?>]
 		) -> Material;
+
+	// Custom changes
+	onAddPlantColor(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>,  defaultPlantColor : () -> PlantColor, callback : (PlantColor) -> void, onError : (string) -> void) -> void;
+	onEditPlantColor(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (PlantColor) -> bool, onError : (string) -> void) -> void;
 	
 }
 

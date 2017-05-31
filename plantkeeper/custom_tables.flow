@@ -1,0 +1,150 @@
+import generated/plantkeeper_tables;
+
+export {
+	PlantColorTableCustom(
+		manager : MaterialManager,
+		jwt : string, 
+		plantColors : DynamicBehaviour<[PlantColor]>, 
+		colorTypes : DynamicBehaviour<[ColorType]>,
+		plants : DynamicBehaviour<[Plant]>,
+		style : [SubTableStyle<PlantColor, ?>]
+	) -> Material;
+
+}
+
+PlantColorTableCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, plants : DynamicBehaviour<[Plant]>, style : [SubTableStyle<PlantColor, ?>]) -> Material {
+	
+	defaultPlantColor = extractStruct(style, SubTableDefaultValue(makePlantColor));
+	allowEdit = extractStruct(style, SubTableAllowEdit(true));
+	onEdit = extractStruct(style, SubTableOnEdit(\__ -> true));
+	onError = extractStruct(style, SubTableOnError(println));
+	checkBeforeDelete = extractStruct(style, SubTableCheckBeforeDelete(\__ -> None()));
+	onAddHandler = extractStruct(style, SubTableOnAdd(\__ -> {}));
+	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddPlantColor(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}));
+	onDelete = extractStruct(style, SubTableDeleteEvent(\item, callback -> {
+		callback2 = \-> {
+			index = elemIndex(getValue(plantColors), item, -1);
+			deletePlantColor(jwt, item, \ok -> next(plantColors, removeIndex(getValue(plantColors), index)), onError.fn);
+			callback();
+		}
+		showDeleteConfirmationDialog(manager, jwt, callback2, onError.fn);
+	}));
+	customIcons : [SubTableCustomIcon] = fold(style, [], \acc, s -> {
+		switch(s) {
+			SubTableCustomIcon(__, __, __): arrayPush(acc, s);
+			default: acc;
+		}
+	});
+	enabledColumnsB = extractStruct(style, SubTableEnableColumns(make(map(enumFromTo(1, 4), \__ -> true)))).enabledB;
+
+	plantColors_selectedIndex = make(-1);
+
+	// Filters
+	filtered_plantColors = make([]);
+	isInlineEdit = make(false);
+	original_plantColors_selectedIndex = plantColors_selectedIndex;
+
+	plantColorsTouch2MRow = \item : PlantColor -> {
+		item_colorTypeId = make(item.colorTypeId);
+		colorTypeId_colorTypes_id = make(findiDef(colorTypes |> getValue, \p -> p.id == item.colorTypeId, -1));
+		colorTypeId_colorTypes_id_unsubscribe_foreign = \ -> subscribe(colorTypeId_colorTypes_id, \i -> if (i != -1) next(item_colorTypeId, getValue(colorTypes)[i].id));
+		[
+			MText(item.name, [MDataRow]),
+			MText(item.colorNumber, [MDataRow]),
+			MConstruct([colorTypeId_colorTypes_id_unsubscribe_foreign], {
+					ind = getValue(colorTypeId_colorTypes_id);
+					if(ind == -1) {
+						MText("", [MDataRow])
+					} else {
+						MText(map(colorTypes |> getValue, \i -> i.name)[ind], [MDataRow])
+					}
+				}
+			),
+		]
+	};
+
+	table = MConstruct([\ -> 
+		subscribe(plantColors, \__-> {
+		if (!getValue(isInlineEdit)) nextDistinct(filtered_plantColors, getValue(plantColors))
+		})
+	], MSelect(fselect2(filtered_plantColors, enabledColumnsB, FLift2(\f, e -> Pair(f, e))), \itemsEnabled -> {
+		items = itemsEnabled.first;
+		visibleColumnsIndices = filtermapi(itemsEnabled.second, \i, item -> if (item) Some(i) else None());
+		MDataTable(
+			filtermapi([
+				MColumn(_("Name"), "", 144, [MAutoSort]),
+				MColumn(_("Color Number"), "", 144, [MAutoSort]),
+				MColumn(_("Color Type Id"), "", 144, [MAutoSort]),
+				MColumn(_(""), "", length(customIcons) * 28, []),
+			], \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None()),
+			map(items, \item -> filtermapi(plantColorsTouch2MRow(item), \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None())),
+			[MSingleSelection(plantColors_selectedIndex), MCondensed(true), MPaginationAutoScaling]
+		)
+	}));
+
+	plantColors_actions = [
+		MTextButton(_("ADD"), \ -> {onAddPlantColor(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
+		MTextButton(_("EDIT"), \ -> {onEditPlantColor(manager, jwt, plantColors, colorTypes, original_plantColors_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plantColors_selectedIndex, -1)))]),
+		MTextButton(_("DELETE"), \ -> {
+			filteredItemsVal = getValue(filtered_plantColors);
+			index = plantColors_selectedIndex |> fgetValue;
+			errorDeleteMsgM = checkBeforeDelete.fn(filteredItemsVal[index]);
+			if (isNone(errorDeleteMsgM)) {
+				itemsVal = getValue(plantColors);
+				original_index = original_plantColors_selectedIndex |> fgetValue;
+				if (index > -1 && index < length(filteredItemsVal)) {
+					if (exists(getValue(plants), \r -> r.leafColorId == filteredItemsVal[index].id)) {
+						ShowMConfirmation(
+							manager,
+							"",
+							"OK",
+							"enter",
+							MText("This plantColor is referenced in existing tables. You can't delete it", [])
+						)
+					} else {
+						onDelete.fn(filteredItemsVal[index], \-> {
+						next(plantColors, removeIndex(itemsVal, original_index));
+						next(plantColors_selectedIndex, -1);
+						});
+					}
+				}
+			} else {
+				errorDeleteMsg = either(errorDeleteMsgM, "");
+				if (errorDeleteMsg != "") {
+					close = make(false);
+					ShowMDialog(manager, close,
+						[
+							MDialogTitle("Delete error"),
+							MDialogUseFrame(),
+							MDialogActions([
+								MTextButton("CLOSE", \ -> next(close, true), [MBlue(500)], [])
+							]),
+						],
+						MText(errorDeleteMsg, [])
+					);
+				}
+			}
+		}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plantColors_selectedIndex, -1)))]),
+	];
+
+	plantColors_view = MBorder(16.0, 16.0, 0.0, 0.0, MLines([
+		TFixed(0.0, 8.0),
+		MCols([TFixed(24.0, 0.0),MText(_("Plant Color"), [MTitle])]),
+		TFixed(0.0, 16.0),
+		table
+	]));
+
+	MLet("body", plantColors_view,
+		MLines([
+			TDisplay("body"),
+			TFixed(0.0, 16.0),
+			MAvailable(
+				MCols(concat([TFillXY()],  if (allowEdit.allow) plantColors_actions else [TEmpty()] )),
+				TGroup2(
+					TFixed(256.0, 0.0),
+					TScale(const(Factor(1.0, 0.0)), TGhost("body"))
+				)
+			)
+		])
+	);
+}
