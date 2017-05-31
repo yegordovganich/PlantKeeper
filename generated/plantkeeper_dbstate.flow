@@ -3,7 +3,7 @@ forbid plantkeeper/config;
 import promise;
 
 import generated/plantkeeper_tables;
-import plantkeeper/custom_tables;
+import plantkeeper/custom/tables;
 import oauth/generated/oauth_dbstate;
 import admin_panel/generated/admin_panel_dbstate;
 

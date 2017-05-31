@@ -1,4 +1,6 @@
 import generated/plantkeeper_tables;
+import plantkeeper/custom/dialogs;
+import plantkeeper/utils;
 
 export {
 	PlantColorTableCustom(
@@ -20,7 +22,7 @@ PlantColorTableCustom(manager : MaterialManager, jwt : string, plantColors : Dyn
 	onError = extractStruct(style, SubTableOnError(println));
 	checkBeforeDelete = extractStruct(style, SubTableCheckBeforeDelete(\__ -> None()));
 	onAddHandler = extractStruct(style, SubTableOnAdd(\__ -> {}));
-	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddPlantColor(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}));
+	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddPlantColorCustom(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}));
 	onDelete = extractStruct(style, SubTableDeleteEvent(\item, callback -> {
 		callback2 = \-> {
 			index = elemIndex(getValue(plantColors), item, -1);
@@ -50,7 +52,7 @@ PlantColorTableCustom(manager : MaterialManager, jwt : string, plantColors : Dyn
 		colorTypeId_colorTypes_id_unsubscribe_foreign = \ -> subscribe(colorTypeId_colorTypes_id, \i -> if (i != -1) next(item_colorTypeId, getValue(colorTypes)[i].id));
 		[
 			MText(item.name, [MDataRow]),
-			MText(item.colorNumber, [MDataRow]),
+			TRectangle([Fill(plantColor2int(item.colorNumber))], TFixed(16.0, 16.0)),
 			MConstruct([colorTypeId_colorTypes_id_unsubscribe_foreign], {
 					ind = getValue(colorTypeId_colorTypes_id);
 					if(ind == -1) {
@@ -73,7 +75,7 @@ PlantColorTableCustom(manager : MaterialManager, jwt : string, plantColors : Dyn
 		MDataTable(
 			filtermapi([
 				MColumn(_("Name"), "", 144, [MAutoSort]),
-				MColumn(_("Color Number"), "", 144, [MAutoSort]),
+				MColumn(_("Color"), "", 144, [MAutoSort]),
 				MColumn(_("Color Type Id"), "", 144, [MAutoSort]),
 				MColumn(_(""), "", length(customIcons) * 28, []),
 			], \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None()),
@@ -83,8 +85,8 @@ PlantColorTableCustom(manager : MaterialManager, jwt : string, plantColors : Dyn
 	}));
 
 	plantColors_actions = [
-		MTextButton(_("ADD"), \ -> {onAddPlantColor(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
-		MTextButton(_("EDIT"), \ -> {onEditPlantColor(manager, jwt, plantColors, colorTypes, original_plantColors_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plantColors_selectedIndex, -1)))]),
+		MTextButton(_("ADD"), \ -> {onAddPlantColorCustom(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
+		MTextButton(_("EDIT"), \ -> {onEditPlantColorCustom(manager, jwt, plantColors, colorTypes, original_plantColors_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plantColors_selectedIndex, -1)))]),
 		MTextButton(_("DELETE"), \ -> {
 			filteredItemsVal = getValue(filtered_plantColors);
 			index = plantColors_selectedIndex |> fgetValue;

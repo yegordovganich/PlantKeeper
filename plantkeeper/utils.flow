@@ -1,0 +1,22 @@
+import string;
+import material/material_color;
+
+export {
+	plantColor2int(color : string) -> int;
+
+	int2PlantColor(color : int) -> string;
+
+	getPlantColor(color : MColor) -> string;
+}
+
+plantColor2int(color : string) -> int {
+	parseHex(ltrim2(color, "#"))
+}
+
+int2PlantColor(color : int) -> string {
+	"#" + formatHex(color)
+}
+
+getPlantColor(color : MColor) -> string {
+	int2PlantColor(MColor2int(color))
+}

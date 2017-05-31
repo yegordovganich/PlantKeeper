@@ -1,0 +1,103 @@
+import generated/plantkeeper_tables;
+import plantkeeper/utils;
+
+export {
+	onAddPlantColorCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>,  defaultPlantColor : () -> PlantColor, callback : (PlantColor) -> void, onError : (string) -> void) -> void;
+	onEditPlantColorCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (PlantColor) -> bool, onError : (string) -> void) -> void;
+}
+
+onAddPlantColorCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>,  defaultPlantColor : () -> PlantColor, callback : (PlantColor) -> void, onError : (string) -> void) -> void {
+	_plantColor = defaultPlantColor();
+	close = make(false);
+	onAdd = \newPlantColor -> {
+		insertPlantColor(jwt, newPlantColor, \id -> {
+			newPlantColor2 = PlantColor(id, newPlantColor.name, newPlantColor.colorNumber, newPlantColor.colorTypeId);
+			dynArrayPush(plantColors, newPlantColor2);
+			callback(newPlantColor2)
+		}, onError);
+		next(close, true);
+	}
+	onCancel = \-> { next(close, true) };
+	ShowMDialog(manager, close,
+		[
+			MDialogUseFrame(),
+			MDialogScroll(),
+		],
+		editPlantColorDataCustom(manager, _plantColor, getValue(colorTypes), onAdd, onCancel)
+	);
+}
+
+onEditPlantColorCustom(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (PlantColor) -> bool, onError : (string) -> void) -> void {
+	if (index > -1 && index < length(getValue(plantColors))) {
+		close = make(false);
+		onPlantColorEdit = \editedPlantColor -> {
+			if (onEdit(editedPlantColor)) {
+	 			updatePlantColor(jwt, editedPlantColor, \ok -> {
+					next(plantColors, replace(getValue(plantColors), index, editedPlantColor))
+				}, onError);
+				next(close, true);
+			}
+		}
+		onCancel = \-> { next(close, true) };
+		ShowMDialog(manager, close,
+			[
+				MDialogUseFrame(),
+				MDialogActions([]),
+				MDialogScroll(),
+			],
+			editPlantColorDataCustom(manager, getValue(plantColors)[index], getValue(colorTypes), onPlantColorEdit, onCancel)
+		);
+	}
+}
+
+editPlantColorDataCustom(manager : MaterialManager, _plantColor : PlantColor, colorTypes : [ColorType], onSave : (PlantColor) -> void, onCancel : () -> void) -> Material {
+	
+	_plantColor_name = make(_plantColor.name);
+	_plantColor_colorNumber = make(MCustomColor(plantColor2int(_plantColor.colorNumber)));
+	_plantColor_colorTypeId = make(_plantColor.colorTypeId);
+	colorTypeId_colorTypes_id = make(findiDef(colorTypes, \p -> p.id == _plantColor.colorTypeId, -1));
+	colorTypeId_colorTypes_id_unsubscribe_foreign = \ -> subscribe(colorTypeId_colorTypes_id, \i -> if (i != -1) next(_plantColor_colorTypeId, colorTypes[i].id));
+
+	_plantColor_actions = [
+		MTextButton(_("CANCEL"), \ -> {onCancel()}, [MBlue(500)], [MShortcut("esc"), MEnabled(const(true))]),
+		MTextButton(_("SAVE"), \ -> {onSave(PlantColor(_plantColor.id, _plantColor_name |> fgetValue, _plantColor_colorNumber |> fgetValue |> getPlantColor, _plantColor_colorTypeId |> fgetValue))}, [MBlue(500), MButtonRaised], [MShortcut(""), MEnabled(const(true))]),
+	];
+
+	_plantColor_view = MBorder(16.0, 16.0, 0.0, 0.0, 
+		MLines([
+			MText(_("Plant Color"), [MTitle]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("name", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MTextInput(_plantColor_name, [MLabel(_("Name")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
+			]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("palette", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MColorPicker(_plantColor_colorNumber, [MaterialColorPicker()])
+			]),
+			TFixed(0.0, 8.0),
+			MConstruct([colorTypeId_colorTypes_id_unsubscribe_foreign], 				MCols([
+					MBorder(0., 18.0, 0., 0.0, MText(_("Color Type Id"), [])),
+					TFixed(16.0, 0.0),
+					getDropDownOrAutoComplete(colorTypeId_colorTypes_id, map(colorTypes, \i -> i.name), false, None(), -1, _(""), [])
+				])
+			)
+	]));
+
+	MLet("body", _plantColor_view,
+		MLines([
+			TDisplay("body"),
+			TFixed(0.0, 16.0),
+			MAvailable(
+				MCols(concat([TFillXY()], _plantColor_actions)),
+				TGroup2(
+					TFixed(256.0, 0.0),
+					TScale(const(Factor(1.0, 0.0)), TGhost("body"))
+				)
+			)
+		])
+	);
+}
