@@ -22,14 +22,6 @@ buildPlantkeeperHomeView(state : PlantkeeperState) -> Material {
 			state.dbState.adminPanelDbState,
 			state.dbState.oauthDbState
 		),
-		// drive
-		buildTabsForDrive(
-			state.manager,
-			state.userInfo,
-			state.dbState.driveDbState,
-			state.dbState.oauthDbState,
-			state.dbState.adminPanelDbState
-		),
 		// plantkeeper
 		[
 			Pair("Families", buildFamilyTable(
@@ -41,12 +33,21 @@ buildPlantkeeperHomeView(state : PlantkeeperState) -> Material {
 					SubTableAllowEdit(true)
 				]
 			)),
-			Pair("Colors", buildColorTable(
+			Pair("Color Types", buildColorTypeTable(
 				state.manager,
 				state.userInfo.jwt,
 				state.dbState.plantkeeperDbState,
 				[
-					SubTableDefaultValue(makeColor),
+					SubTableDefaultValue(makeColorType),
+					SubTableAllowEdit(true)
+				]
+			)),
+			Pair("Plant Colors", buildPlantColorTable(
+				state.manager,
+				state.userInfo.jwt,
+				state.dbState.plantkeeperDbState,
+				[
+					SubTableDefaultValue(makePlantColor),
 					SubTableAllowEdit(true)
 				]
 			)),

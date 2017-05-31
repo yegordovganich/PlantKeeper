@@ -10,11 +10,18 @@ export {
 	updateFamily(jwt : string, val : Family, onOK : (int) -> void, onError : (string) -> void) -> void;
 	deleteFamily(jwt : string, val : Family, onOK : (int) -> void, onError : (string) -> void) -> void;
 	
-	loadColors(jwt : string, onOK : ([Color]) -> void, onError : (string) -> void) -> void;
-	loadColor(jwt : string, id : int, onOK : (Color) -> void, onError : (string) -> void) -> void;
-	insertColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void;
-	updateColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void;
-	deleteColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void;
+	loadColorTypes(jwt : string, onOK : ([ColorType]) -> void, onError : (string) -> void) -> void;
+	loadColorType(jwt : string, id : int, onOK : (ColorType) -> void, onError : (string) -> void) -> void;
+	insertColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void;
+	updateColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void;
+	deleteColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void;
+	
+	loadPlantColors(jwt : string, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void;
+	loadPlantColor(jwt : string, id : int, onOK : (PlantColor) -> void, onError : (string) -> void) -> void;
+	loadPlantColorsByColorTypeId(jwt : string, colorTypeId : int, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void;
+	insertPlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void;
+	updatePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void;
+	deletePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void;
 	
 	loadLeafTypes(jwt : string, onOK : ([LeafType]) -> void, onError : (string) -> void) -> void;
 	loadLeafType(jwt : string, id : int, onOK : (LeafType) -> void, onError : (string) -> void) -> void;
@@ -31,8 +38,8 @@ export {
 	loadPlants(jwt : string, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	loadPlant(jwt : string, id : int, onOK : (Plant) -> void, onError : (string) -> void) -> void;
 	loadPlantsByFamilyId(jwt : string, familieId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
-	loadPlantsByLeafColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
-	loadPlantsByBudColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
+	loadPlantsByLeafColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
+	loadPlantsByBudColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	loadPlantsByLeafTypeId(jwt : string, leafTypeId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	loadPlantsByCarePlanId(jwt : string, carePlanId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	insertPlant(jwt : string, val : Plant, onOK : (int) -> void, onError : (string) -> void) -> void;
@@ -86,46 +93,99 @@ deleteFamily(jwt : string, val : Family, onOK : (int) -> void, onError : (string
 	RETURN 1;
 }
 
-loadColors(jwt : string, onOK : ([Color]) -> void, onError : (string) -> void) -> void {
+loadColorTypes(jwt : string, onOK : ([ColorType]) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	SELECT colors.`id` AS `colors_id`, colors.`color` AS `colors_color`, colors.`leaf` AS `colors_leaf`
-	FROM colors
+	SELECT color_types.`id` AS `color_types_id`, color_types.`name` AS `color_types_name`
+	FROM color_types
 	;
 
-	COLLECT Color(`colors_id` : int, `colors_color` : int, `colors_leaf` : bool);
+	COLLECT ColorType(`color_types_id` : int, `color_types_name` : string);
 }
 
-loadColor(jwt : string, id : int, onOK : (Color) -> void, onError : (string) -> void) -> void {
+loadColorType(jwt : string, id : int, onOK : (ColorType) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	SELECT colors.`id` AS `id`, colors.`color` AS `color`, colors.`leaf` AS `leaf` FROM colors
-	WHERE colors.`id` = $(id) 
+	SELECT color_types.`id` AS `id`, color_types.`name` AS `name` FROM color_types
+	WHERE color_types.`id` = $(id) 
 	;
 
-	RETURN Color(`id` : int, `color` : int, `leaf` : bool);
+	RETURN ColorType(`id` : int, `name` : string);
 }
 
 
-insertColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void {
+insertColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	INSERT INTO colors (`color`, `leaf`)
-	VALUES ($(val.color), $(val.leaf |> b2i));
+	INSERT INTO color_types (`name`)
+	VALUES ($(val.name));
 	SELECT LAST_INSERT_ID() AS id;
 	RETURN `id` : int;
 }
 
 
-updateColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void {
+updateColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	UPDATE colors SET `color` = $(val.color), `leaf` = $(val.leaf |> b2i)
+	UPDATE color_types SET `name` = $(val.name)
 	WHERE `id` = $(val.id)
 	;
 
 	RETURN 1;
 }
 
-deleteColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void {
+deleteColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	DELETE FROM colors
+	DELETE FROM color_types
+	WHERE `id` = $(val.id)
+	;
+	RETURN 1;
+}
+
+loadPlantColors(jwt : string, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	SELECT plant_colors.`id` AS `plant_colors_id`, plant_colors.`name` AS `plant_colors_name`, plant_colors.`color_number` AS `plant_colors_colorNumber`, plant_colors.`color_type_id` AS `plant_colors_colorTypeId`
+	FROM plant_colors
+	;
+
+	COLLECT PlantColor(`plant_colors_id` : int, `plant_colors_name` : string, `plant_colors_colorNumber` : string, `plant_colors_colorTypeId` : int);
+}
+
+loadPlantColor(jwt : string, id : int, onOK : (PlantColor) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	SELECT plant_colors.`id` AS `id`, plant_colors.`name` AS `name`, plant_colors.`color_number` AS `colorNumber`, plant_colors.`color_type_id` AS `colorTypeId` FROM plant_colors
+	WHERE plant_colors.`id` = $(id) 
+	;
+
+	RETURN PlantColor(`id` : int, `name` : string, `colorNumber` : string, `colorTypeId` : int);
+}
+
+loadPlantColorsByColorTypeId(jwt : string, colorTypeId : int, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	SELECT plant_colors.`id` AS `plant_colors_id`, plant_colors.`name` AS `plant_colors_name`, plant_colors.`color_number` AS `plant_colors_colorNumber`, plant_colors.`color_type_id` AS `plant_colors_colorTypeId` FROM plant_colors
+	WHERE plant_colors.`color_type_id` = $(colorTypeId) 
+	;
+
+	COLLECT PlantColor(`plant_colors_id` : int, `plant_colors_name` : string, `plant_colors_colorNumber` : string, `plant_colors_colorTypeId` : int);
+}
+
+insertPlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	INSERT INTO plant_colors (`name`, `color_number`, `color_type_id`)
+	VALUES ($(val.name), $(val.colorNumber), $(val.colorTypeId));
+	SELECT LAST_INSERT_ID() AS id;
+	RETURN `id` : int;
+}
+
+
+updatePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	UPDATE plant_colors SET `name` = $(val.name), `color_number` = $(val.colorNumber), `color_type_id` = $(val.colorTypeId)
+	WHERE `id` = $(val.id)
+	;
+
+	RETURN 1;
+}
+
+deletePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	DELETE FROM plant_colors
 	WHERE `id` = $(val.id)
 	;
 	RETURN 1;
@@ -248,19 +308,19 @@ loadPlantsByFamilyId(jwt : string, familieId : int, onOK : ([Plant]) -> void, on
 	COLLECT Plant(`plants_id` : int, `plants_name` : string, `plants_familyId` : int, `plants_leafColorId` : int, `plants_budColorId` : int, `plants_height` : int, `plants_leafTypeId` : int, `plants_carePlanId` : int);
 }
 
-loadPlantsByLeafColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
+loadPlantsByLeafColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	SELECT plants.`id` AS `plants_id`, plants.`name` AS `plants_name`, plants.`family_id` AS `plants_familyId`, plants.`leaf_color_id` AS `plants_leafColorId`, plants.`bud_color_id` AS `plants_budColorId`, plants.`height` AS `plants_height`, plants.`leaf_type_id` AS `plants_leafTypeId`, plants.`care_plan_id` AS `plants_carePlanId` FROM plants
-	WHERE plants.`leaf_color_id` = $(colorId) 
+	WHERE plants.`leaf_color_id` = $(plantColorId) 
 	;
 
 	COLLECT Plant(`plants_id` : int, `plants_name` : string, `plants_familyId` : int, `plants_leafColorId` : int, `plants_budColorId` : int, `plants_height` : int, `plants_leafTypeId` : int, `plants_carePlanId` : int);
 }
 
-loadPlantsByBudColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
+loadPlantsByBudColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	SELECT plants.`id` AS `plants_id`, plants.`name` AS `plants_name`, plants.`family_id` AS `plants_familyId`, plants.`leaf_color_id` AS `plants_leafColorId`, plants.`bud_color_id` AS `plants_budColorId`, plants.`height` AS `plants_height`, plants.`leaf_type_id` AS `plants_leafTypeId`, plants.`care_plan_id` AS `plants_carePlanId` FROM plants
-	WHERE plants.`bud_color_id` = $(colorId) 
+	WHERE plants.`bud_color_id` = $(plantColorId) 
 	;
 
 	COLLECT Plant(`plants_id` : int, `plants_name` : string, `plants_familyId` : int, `plants_leafColorId` : int, `plants_budColorId` : int, `plants_height` : int, `plants_leafTypeId` : int, `plants_carePlanId` : int);

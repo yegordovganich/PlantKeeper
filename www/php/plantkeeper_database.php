@@ -15,9 +15,9 @@ function deleteCarePlan(/* $(val.id) */ $a0) {
 }
 
 
-function deleteColor(/* $(val.id) */ $a0) {
+function deleteColorType(/* $(val.id) */ $a0) {
 	$result = array();
-	$sql = "DELETE FROM colors
+	$sql = "DELETE FROM color_types
 	WHERE `id` = :a0";
 	$result[] = exec_query("", $sql, array('a0' => $a0));
 
@@ -55,6 +55,16 @@ function deletePlant(/* $(val.id) */ $a0) {
 }
 
 
+function deletePlantColor(/* $(val.id) */ $a0) {
+	$result = array();
+	$sql = "DELETE FROM plant_colors
+	WHERE `id` = :a0";
+	$result[] = exec_query("", $sql, array('a0' => $a0));
+
+	return $result;
+}
+
+
 function insertCarePlan(/* $(val.name) */ $a0, /* $(val.description) */ $a1, /* $(val.pour) */ $a2, /* $(val.light |> b2i) */ $a3, /* $(val.turn) */ $a4, /* $(val.tempreture) */ $a5, /* $(val.spray) */ $a6, /* $(val.wipeLeaves) */ $a7) {
 	$result = array();
 	$sql = "INSERT INTO care_plans (`name`, `description`, `pour`, `light`, `turn`, `tempreture`, `spray`, `wipe_leaves`)
@@ -67,11 +77,11 @@ function insertCarePlan(/* $(val.name) */ $a0, /* $(val.description) */ $a1, /* 
 }
 
 
-function insertColor(/* $(val.color) */ $a0, /* $(val.leaf |> b2i) */ $a1) {
+function insertColorType(/* $(val.name) */ $a0) {
 	$result = array();
-	$sql = "INSERT INTO colors (`color`, `leaf`)
-	VALUES (:a0 , :a1 )";
-	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1));
+	$sql = "INSERT INTO color_types (`name`)
+	VALUES (:a0 )";
+	$result[] = exec_query("", $sql, array('a0' => $a0));
 	$sql = "SELECT LAST_INSERT_ID() AS id";
 	$result[] = exec_query("", $sql, array());
 
@@ -115,6 +125,18 @@ function insertPlant(/* $(val.name) */ $a0, /* $(val.familyId) */ $a1, /* $(val.
 }
 
 
+function insertPlantColor(/* $(val.name) */ $a0, /* $(val.colorNumber) */ $a1, /* $(val.colorTypeId) */ $a2) {
+	$result = array();
+	$sql = "INSERT INTO plant_colors (`name`, `color_number`, `color_type_id`)
+	VALUES (:a0 , :a1 , :a2 )";
+	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1, 'a2' => $a2));
+	$sql = "SELECT LAST_INSERT_ID() AS id";
+	$result[] = exec_query("", $sql, array());
+
+	return $result;
+}
+
+
 function loadCarePlan(/* $(id) */ $a0) {
 	$result = array();
 	$sql = "SELECT care_plans.`id` AS `id`, care_plans.`name` AS `name`, care_plans.`description` AS `description`, care_plans.`pour` AS `pour`, care_plans.`light` AS `light`, care_plans.`turn` AS `turn`, care_plans.`tempreture` AS `tempreture`, care_plans.`spray` AS `spray`, care_plans.`wipe_leaves` AS `wipeLeaves` FROM care_plans
@@ -135,20 +157,20 @@ function loadCarePlans() {
 }
 
 
-function loadColor(/* $(id) */ $a0) {
+function loadColorType(/* $(id) */ $a0) {
 	$result = array();
-	$sql = "SELECT colors.`id` AS `id`, colors.`color` AS `color`, colors.`leaf` AS `leaf` FROM colors
-	WHERE colors.`id` = :a0";
+	$sql = "SELECT color_types.`id` AS `id`, color_types.`name` AS `name` FROM color_types
+	WHERE color_types.`id` = :a0";
 	$result[] = exec_query("", $sql, array('a0' => $a0));
 
 	return $result;
 }
 
 
-function loadColors() {
+function loadColorTypes() {
 	$result = array();
-	$sql = "SELECT colors.`id` AS `colors_id`, colors.`color` AS `colors_color`, colors.`leaf` AS `colors_leaf`
-	FROM colors";
+	$sql = "SELECT color_types.`id` AS `color_types_id`, color_types.`name` AS `color_types_name`
+	FROM color_types";
 	$result[] = exec_query("", $sql, array());
 
 	return $result;
@@ -205,6 +227,36 @@ function loadPlant(/* $(id) */ $a0) {
 }
 
 
+function loadPlantColor(/* $(id) */ $a0) {
+	$result = array();
+	$sql = "SELECT plant_colors.`id` AS `id`, plant_colors.`name` AS `name`, plant_colors.`color_number` AS `colorNumber`, plant_colors.`color_type_id` AS `colorTypeId` FROM plant_colors
+	WHERE plant_colors.`id` = :a0";
+	$result[] = exec_query("", $sql, array('a0' => $a0));
+
+	return $result;
+}
+
+
+function loadPlantColors() {
+	$result = array();
+	$sql = "SELECT plant_colors.`id` AS `plant_colors_id`, plant_colors.`name` AS `plant_colors_name`, plant_colors.`color_number` AS `plant_colors_colorNumber`, plant_colors.`color_type_id` AS `plant_colors_colorTypeId`
+	FROM plant_colors";
+	$result[] = exec_query("", $sql, array());
+
+	return $result;
+}
+
+
+function loadPlantColorsByColorTypeId(/* $(colorTypeId) */ $a0) {
+	$result = array();
+	$sql = "SELECT plant_colors.`id` AS `plant_colors_id`, plant_colors.`name` AS `plant_colors_name`, plant_colors.`color_number` AS `plant_colors_colorNumber`, plant_colors.`color_type_id` AS `plant_colors_colorTypeId` FROM plant_colors
+	WHERE plant_colors.`color_type_id` = :a0";
+	$result[] = exec_query("", $sql, array('a0' => $a0));
+
+	return $result;
+}
+
+
 function loadPlants() {
 	$result = array();
 	$sql = "SELECT plants.`id` AS `plants_id`, plants.`name` AS `plants_name`, plants.`family_id` AS `plants_familyId`, plants.`leaf_color_id` AS `plants_leafColorId`, plants.`bud_color_id` AS `plants_budColorId`, plants.`height` AS `plants_height`, plants.`leaf_type_id` AS `plants_leafTypeId`, plants.`care_plan_id` AS `plants_carePlanId`
@@ -215,7 +267,7 @@ function loadPlants() {
 }
 
 
-function loadPlantsByBudColorId(/* $(colorId) */ $a0) {
+function loadPlantsByBudColorId(/* $(plantColorId) */ $a0) {
 	$result = array();
 	$sql = "SELECT plants.`id` AS `plants_id`, plants.`name` AS `plants_name`, plants.`family_id` AS `plants_familyId`, plants.`leaf_color_id` AS `plants_leafColorId`, plants.`bud_color_id` AS `plants_budColorId`, plants.`height` AS `plants_height`, plants.`leaf_type_id` AS `plants_leafTypeId`, plants.`care_plan_id` AS `plants_carePlanId` FROM plants
 	WHERE plants.`bud_color_id` = :a0";
@@ -245,7 +297,7 @@ function loadPlantsByFamilyId(/* $(familieId) */ $a0) {
 }
 
 
-function loadPlantsByLeafColorId(/* $(colorId) */ $a0) {
+function loadPlantsByLeafColorId(/* $(plantColorId) */ $a0) {
 	$result = array();
 	$sql = "SELECT plants.`id` AS `plants_id`, plants.`name` AS `plants_name`, plants.`family_id` AS `plants_familyId`, plants.`leaf_color_id` AS `plants_leafColorId`, plants.`bud_color_id` AS `plants_budColorId`, plants.`height` AS `plants_height`, plants.`leaf_type_id` AS `plants_leafTypeId`, plants.`care_plan_id` AS `plants_carePlanId` FROM plants
 	WHERE plants.`leaf_color_id` = :a0";
@@ -274,10 +326,10 @@ function updateCarePlan(/* $(val.id) */ $a0, /* $(val.name) */ $a1, /* $(val.des
 }
 
 
-function updateColor(/* $(val.id) */ $a0, /* $(val.color) */ $a1, /* $(val.leaf |> b2i) */ $a2) {
+function updateColorType(/* $(val.id) */ $a0, /* $(val.name) */ $a1) {
 	$result = array();
-	$sql = "UPDATE colors SET `color` = :a1 , `leaf` = :a2 WHERE `id` = :a0";
-	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1, 'a2' => $a2));
+	$sql = "UPDATE color_types SET `name` = :a1 WHERE `id` = :a0";
+	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1));
 
 	return $result;
 }
@@ -309,6 +361,15 @@ function updatePlant(/* $(val.id) */ $a0, /* $(val.name) */ $a1, /* $(val.family
 	return $result;
 }
 
+
+function updatePlantColor(/* $(val.id) */ $a0, /* $(val.name) */ $a1, /* $(val.colorNumber) */ $a2, /* $(val.colorTypeId) */ $a3) {
+	$result = array();
+	$sql = "UPDATE plant_colors SET `name` = :a1 , `color_number` = :a2 , `color_type_id` = :a3 WHERE `id` = :a0";
+	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1, 'a2' => $a2, 'a3' => $a3));
+
+	return $result;
+}
+
 authenticate();
 
 switch (getParameter("operation")) {
@@ -317,9 +378,9 @@ switch (getParameter("operation")) {
 		$res = deleteCarePlan($a0);
 		printOkAndJson($res);
 		break;
-	case "deleteColor":
+	case "deleteColorType":
 		$a0 = getParameter("a0");
-		$res = deleteColor($a0);
+		$res = deleteColorType($a0);
 		printOkAndJson($res);
 		break;
 	case "deleteFamily":
@@ -337,6 +398,11 @@ switch (getParameter("operation")) {
 		$res = deletePlant($a0);
 		printOkAndJson($res);
 		break;
+	case "deletePlantColor":
+		$a0 = getParameter("a0");
+		$res = deletePlantColor($a0);
+		printOkAndJson($res);
+		break;
 	case "insertCarePlan":
 		$a0 = getParameter("a0");
 		$a1 = getParameter("a1");
@@ -349,10 +415,9 @@ switch (getParameter("operation")) {
 		$res = insertCarePlan($a0, $a1, $a2, $a3, $a4, $a5, $a6, $a7);
 		printOkAndJson($res);
 		break;
-	case "insertColor":
+	case "insertColorType":
 		$a0 = getParameter("a0");
-		$a1 = getParameter("a1");
-		$res = insertColor($a0, $a1);
+		$res = insertColorType($a0);
 		printOkAndJson($res);
 		break;
 	case "insertFamily":
@@ -378,6 +443,13 @@ switch (getParameter("operation")) {
 		$res = insertPlant($a0, $a1, $a2, $a3, $a4, $a5, $a6);
 		printOkAndJson($res);
 		break;
+	case "insertPlantColor":
+		$a0 = getParameter("a0");
+		$a1 = getParameter("a1");
+		$a2 = getParameter("a2");
+		$res = insertPlantColor($a0, $a1, $a2);
+		printOkAndJson($res);
+		break;
 	case "loadCarePlan":
 		$a0 = getParameter("a0");
 		$res = loadCarePlan($a0);
@@ -387,13 +459,13 @@ switch (getParameter("operation")) {
 		$res = loadCarePlans();
 		printOkAndJson($res);
 		break;
-	case "loadColor":
+	case "loadColorType":
 		$a0 = getParameter("a0");
-		$res = loadColor($a0);
+		$res = loadColorType($a0);
 		printOkAndJson($res);
 		break;
-	case "loadColors":
-		$res = loadColors();
+	case "loadColorTypes":
+		$res = loadColorTypes();
 		printOkAndJson($res);
 		break;
 	case "loadFamily":
@@ -417,6 +489,20 @@ switch (getParameter("operation")) {
 	case "loadPlant":
 		$a0 = getParameter("a0");
 		$res = loadPlant($a0);
+		printOkAndJson($res);
+		break;
+	case "loadPlantColor":
+		$a0 = getParameter("a0");
+		$res = loadPlantColor($a0);
+		printOkAndJson($res);
+		break;
+	case "loadPlantColors":
+		$res = loadPlantColors();
+		printOkAndJson($res);
+		break;
+	case "loadPlantColorsByColorTypeId":
+		$a0 = getParameter("a0");
+		$res = loadPlantColorsByColorTypeId($a0);
 		printOkAndJson($res);
 		break;
 	case "loadPlants":
@@ -461,11 +547,10 @@ switch (getParameter("operation")) {
 		$res = updateCarePlan($a0, $a1, $a2, $a3, $a4, $a5, $a6, $a7, $a8);
 		printOkAndJson($res);
 		break;
-	case "updateColor":
+	case "updateColorType":
 		$a0 = getParameter("a0");
 		$a1 = getParameter("a1");
-		$a2 = getParameter("a2");
-		$res = updateColor($a0, $a1, $a2);
+		$res = updateColorType($a0, $a1);
 		printOkAndJson($res);
 		break;
 	case "updateFamily":
@@ -492,6 +577,14 @@ switch (getParameter("operation")) {
 		$a6 = getParameter("a6");
 		$a7 = getParameter("a7");
 		$res = updatePlant($a0, $a1, $a2, $a3, $a4, $a5, $a6, $a7);
+		printOkAndJson($res);
+		break;
+	case "updatePlantColor":
+		$a0 = getParameter("a0");
+		$a1 = getParameter("a1");
+		$a2 = getParameter("a2");
+		$a3 = getParameter("a3");
+		$res = updatePlantColor($a0, $a1, $a2, $a3);
 		printOkAndJson($res);
 		break;
 

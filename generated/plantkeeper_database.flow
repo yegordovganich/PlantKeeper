@@ -15,11 +15,18 @@ export {
 	updateFamily(jwt : string, val : Family, onOK : (int) -> void, onError : (string) -> void) -> void;
 	deleteFamily(jwt : string, val : Family, onOK : (int) -> void, onError : (string) -> void) -> void;
 	
-	loadColors(jwt : string, onOK : ([Color]) -> void, onError : (string) -> void) -> void;
-	loadColor(jwt : string, id : int, onOK : (Color) -> void, onError : (string) -> void) -> void;
-	insertColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void;
-	updateColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void;
-	deleteColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void;
+	loadColorTypes(jwt : string, onOK : ([ColorType]) -> void, onError : (string) -> void) -> void;
+	loadColorType(jwt : string, id : int, onOK : (ColorType) -> void, onError : (string) -> void) -> void;
+	insertColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void;
+	updateColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void;
+	deleteColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void;
+	
+	loadPlantColors(jwt : string, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void;
+	loadPlantColor(jwt : string, id : int, onOK : (PlantColor) -> void, onError : (string) -> void) -> void;
+	loadPlantColorsByColorTypeId(jwt : string, colorTypeId : int, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void;
+	insertPlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void;
+	updatePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void;
+	deletePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void;
 	
 	loadLeafTypes(jwt : string, onOK : ([LeafType]) -> void, onError : (string) -> void) -> void;
 	loadLeafType(jwt : string, id : int, onOK : (LeafType) -> void, onError : (string) -> void) -> void;
@@ -36,8 +43,8 @@ export {
 	loadPlants(jwt : string, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	loadPlant(jwt : string, id : int, onOK : (Plant) -> void, onError : (string) -> void) -> void;
 	loadPlantsByFamilyId(jwt : string, familieId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
-	loadPlantsByLeafColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
-	loadPlantsByBudColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
+	loadPlantsByLeafColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
+	loadPlantsByBudColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	loadPlantsByLeafTypeId(jwt : string, leafTypeId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	loadPlantsByCarePlanId(jwt : string, carePlanId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void;
 	insertPlant(jwt : string, val : Plant, onOK : (int) -> void, onError : (string) -> void) -> void;
@@ -234,10 +241,10 @@ deleteFamily(jwt : string, val : Family, onOK : (int) -> void, onError : (string
 	}, onError, nop1);
 }
 
-loadColors(jwt : string, onOK : ([Color]) -> void, onError : (string) -> void) -> void {
+loadColorTypes(jwt : string, onOK : ([ColorType]) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
-		[ KeyValue("operation", "loadColors") ], 
+		[ KeyValue("operation", "loadColorTypes") ], 
 		
 		REQUESTPAR
 	]), \result -> {
@@ -262,7 +269,7 @@ loadColors(jwt : string, onOK : ([Color]) -> void, onError : (string) -> void) -
 				onError("Returned JSON doesn't contain enough data arrays.");
 			} else {
 				onOK(
-					map(_ja(0), \arr -> { Color(_ji(arr.second, "0")  /* colors_id */ , _ji(arr.second, "1")  /* colors_color */ , _jb(arr.second, "2")  /* colors_leaf */ ); })
+					map(_ja(0), \arr -> { ColorType(_ji(arr.second, "0")  /* color_types_id */ , _js(arr.second, "1")  /* color_types_name */ ); })
 				);
 			}
 		} else {
@@ -271,10 +278,10 @@ loadColors(jwt : string, onOK : ([Color]) -> void, onError : (string) -> void) -
 	}, onError, nop1);
 }
 
-loadColor(jwt : string, id : int, onOK : (Color) -> void, onError : (string) -> void) -> void {
+loadColorType(jwt : string, id : int, onOK : (ColorType) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
-		[ KeyValue("operation", "loadColor") ], 
+		[ KeyValue("operation", "loadColorType") ], 
 		buildKeyValueForPhp("a0", (id)),
 		REQUESTPAR
 	]), \result -> {
@@ -301,7 +308,7 @@ loadColor(jwt : string, id : int, onOK : (Color) -> void, onError : (string) -> 
 				onError("Missing"); 
 			} else {
 				onOK(
-					Color(_ji(_j0(0), "0")  /* id */ , _ji(_j0(0), "1")  /* color */ , _jb(_j0(0), "2")  /* leaf */ )
+					ColorType(_ji(_j0(0), "0")  /* id */ , _js(_j0(0), "1")  /* name */ )
 				);
 			}
 		} else {
@@ -311,12 +318,11 @@ loadColor(jwt : string, id : int, onOK : (Color) -> void, onError : (string) -> 
 }
 
 
-insertColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void {
+insertColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
-		[ KeyValue("operation", "insertColor") ], 
-		buildKeyValueForPhp("a0", (val.color)),
-		buildKeyValueForPhp("a1", (val.leaf |> b2i)),
+		[ KeyValue("operation", "insertColorType") ], 
+		buildKeyValueForPhp("a0", (val.name)),
 		REQUESTPAR
 	]), \result -> {
 		if (startsWith(result, "OK\n")) {
@@ -350,13 +356,12 @@ insertColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) 
 }
 
 
-updateColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void {
+updateColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
-		[ KeyValue("operation", "updateColor") ], 
+		[ KeyValue("operation", "updateColorType") ], 
 		buildKeyValueForPhp("a0", (val.id)),
-		buildKeyValueForPhp("a1", (val.color)),
-		buildKeyValueForPhp("a2", (val.leaf |> b2i)),
+		buildKeyValueForPhp("a1", (val.name)),
 		REQUESTPAR
 	]), \result -> {
 		if (startsWith(result, "OK\n")) {
@@ -387,10 +392,236 @@ updateColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) 
 	}, onError, nop1);
 }
 
-deleteColor(jwt : string, val : Color, onOK : (int) -> void, onError : (string) -> void) -> void {
+deleteColorType(jwt : string, val : ColorType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
-		[ KeyValue("operation", "deleteColor") ], 
+		[ KeyValue("operation", "deleteColorType") ], 
+		buildKeyValueForPhp("a0", (val.id)),
+		REQUESTPAR
+	]), \result -> {
+		if (startsWith(result, "OK\n")) {
+			json = parseJson(strRight(result, 3));
+			jsonData = getJsonObjectValue(json, []);
+
+			_jj = \ ix -> getJsonFieldValue(json, i2s(ix), JsonNull());
+			_ja = \ ix -> getJsonObjectValue(_jj(ix), []);
+			_j0 = \ ix -> { v = _ja(ix); if (v == []) JsonNull() else v[0].second; }
+			_jb = \ arr, n -> getJsonBoolField(arr, n, false);
+			_ji = \ arr, n -> getJsonIntField(arr, n, 0);
+			_js = \ arr, n -> getJsonStringField(arr, n, "");
+			_jd = \ arr, n -> getJsonDoubleField(arr, n, 0.0);
+
+			_jbM = \ arr, n -> getJsonMaybeField(arr, getJsonBoolValue, n, false);
+			_jiM = \ arr, n -> getJsonMaybeField(arr, getJsonIntValue, n, 0);
+			_jsM = \ arr, n -> getJsonMaybeField(arr, getJsonStringValue, n, "");
+			_jdM = \ arr, n -> getJsonMaybeField(arr, getJsonDoubleValue, n, 0.0);
+
+			if (length(jsonData) < 1) {
+				onError("Returned JSON doesn't contain enough data arrays.");
+			} else {
+				onOK(1);
+			}
+		} else {
+			onError(result)
+		}
+	}, onError, nop1);
+}
+
+loadPlantColors(jwt : string, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
+		[ KeyValue("operation", "loadPlantColors") ], 
+		
+		REQUESTPAR
+	]), \result -> {
+		if (startsWith(result, "OK\n")) {
+			json = parseJson(strRight(result, 3));
+			jsonData = getJsonObjectValue(json, []);
+
+			_jj = \ ix -> getJsonFieldValue(json, i2s(ix), JsonNull());
+			_ja = \ ix -> getJsonObjectValue(_jj(ix), []);
+			_j0 = \ ix -> { v = _ja(ix); if (v == []) JsonNull() else v[0].second; }
+			_jb = \ arr, n -> getJsonBoolField(arr, n, false);
+			_ji = \ arr, n -> getJsonIntField(arr, n, 0);
+			_js = \ arr, n -> getJsonStringField(arr, n, "");
+			_jd = \ arr, n -> getJsonDoubleField(arr, n, 0.0);
+
+			_jbM = \ arr, n -> getJsonMaybeField(arr, getJsonBoolValue, n, false);
+			_jiM = \ arr, n -> getJsonMaybeField(arr, getJsonIntValue, n, 0);
+			_jsM = \ arr, n -> getJsonMaybeField(arr, getJsonStringValue, n, "");
+			_jdM = \ arr, n -> getJsonMaybeField(arr, getJsonDoubleValue, n, 0.0);
+
+			if (length(jsonData) < 1) {
+				onError("Returned JSON doesn't contain enough data arrays.");
+			} else {
+				onOK(
+					map(_ja(0), \arr -> { PlantColor(_ji(arr.second, "0")  /* plant_colors_id */ , _js(arr.second, "1")  /* plant_colors_name */ , _js(arr.second, "2")  /* plant_colors_colorNumber */ , _ji(arr.second, "3")  /* plant_colors_colorTypeId */ ); })
+				);
+			}
+		} else {
+			onError(result)
+		}
+	}, onError, nop1);
+}
+
+loadPlantColor(jwt : string, id : int, onOK : (PlantColor) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
+		[ KeyValue("operation", "loadPlantColor") ], 
+		buildKeyValueForPhp("a0", (id)),
+		REQUESTPAR
+	]), \result -> {
+		if (startsWith(result, "OK\n")) {
+			json = parseJson(strRight(result, 3));
+			jsonData = getJsonObjectValue(json, []);
+
+			_jj = \ ix -> getJsonFieldValue(json, i2s(ix), JsonNull());
+			_ja = \ ix -> getJsonObjectValue(_jj(ix), []);
+			_j0 = \ ix -> { v = _ja(ix); if (v == []) JsonNull() else v[0].second; }
+			_jb = \ arr, n -> getJsonBoolField(arr, n, false);
+			_ji = \ arr, n -> getJsonIntField(arr, n, 0);
+			_js = \ arr, n -> getJsonStringField(arr, n, "");
+			_jd = \ arr, n -> getJsonDoubleField(arr, n, 0.0);
+
+			_jbM = \ arr, n -> getJsonMaybeField(arr, getJsonBoolValue, n, false);
+			_jiM = \ arr, n -> getJsonMaybeField(arr, getJsonIntValue, n, 0);
+			_jsM = \ arr, n -> getJsonMaybeField(arr, getJsonStringValue, n, "");
+			_jdM = \ arr, n -> getJsonMaybeField(arr, getJsonDoubleValue, n, 0.0);
+
+			if (length(jsonData) < 1) {
+				onError("Returned JSON doesn't contain enough data arrays.");
+			} else if (({ f = _jj(0); f == JsonNull() || f == JsonObject([]) })) { 
+				onError("Missing"); 
+			} else {
+				onOK(
+					PlantColor(_ji(_j0(0), "0")  /* id */ , _js(_j0(0), "1")  /* name */ , _js(_j0(0), "2")  /* colorNumber */ , _ji(_j0(0), "3")  /* colorTypeId */ )
+				);
+			}
+		} else {
+			onError(result)
+		}
+	}, onError, nop1);
+}
+
+loadPlantColorsByColorTypeId(jwt : string, colorTypeId : int, onOK : ([PlantColor]) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
+		[ KeyValue("operation", "loadPlantColorsByColorTypeId") ], 
+		buildKeyValueForPhp("a0", (colorTypeId)),
+		REQUESTPAR
+	]), \result -> {
+		if (startsWith(result, "OK\n")) {
+			json = parseJson(strRight(result, 3));
+			jsonData = getJsonObjectValue(json, []);
+
+			_jj = \ ix -> getJsonFieldValue(json, i2s(ix), JsonNull());
+			_ja = \ ix -> getJsonObjectValue(_jj(ix), []);
+			_j0 = \ ix -> { v = _ja(ix); if (v == []) JsonNull() else v[0].second; }
+			_jb = \ arr, n -> getJsonBoolField(arr, n, false);
+			_ji = \ arr, n -> getJsonIntField(arr, n, 0);
+			_js = \ arr, n -> getJsonStringField(arr, n, "");
+			_jd = \ arr, n -> getJsonDoubleField(arr, n, 0.0);
+
+			_jbM = \ arr, n -> getJsonMaybeField(arr, getJsonBoolValue, n, false);
+			_jiM = \ arr, n -> getJsonMaybeField(arr, getJsonIntValue, n, 0);
+			_jsM = \ arr, n -> getJsonMaybeField(arr, getJsonStringValue, n, "");
+			_jdM = \ arr, n -> getJsonMaybeField(arr, getJsonDoubleValue, n, 0.0);
+
+			if (length(jsonData) < 1) {
+				onError("Returned JSON doesn't contain enough data arrays.");
+			} else {
+				onOK(
+					map(_ja(0), \arr -> { PlantColor(_ji(arr.second, "0")  /* plant_colors_id */ , _js(arr.second, "1")  /* plant_colors_name */ , _js(arr.second, "2")  /* plant_colors_colorNumber */ , _ji(arr.second, "3")  /* plant_colors_colorTypeId */ ); })
+				);
+			}
+		} else {
+			onError(result)
+		}
+	}, onError, nop1);
+}
+
+insertPlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
+		[ KeyValue("operation", "insertPlantColor") ], 
+		buildKeyValueForPhp("a0", (val.name)),
+		buildKeyValueForPhp("a1", (val.colorNumber)),
+		buildKeyValueForPhp("a2", (val.colorTypeId)),
+		REQUESTPAR
+	]), \result -> {
+		if (startsWith(result, "OK\n")) {
+			json = parseJson(strRight(result, 3));
+			jsonData = getJsonObjectValue(json, []);
+
+			_jj = \ ix -> getJsonFieldValue(json, i2s(ix), JsonNull());
+			_ja = \ ix -> getJsonObjectValue(_jj(ix), []);
+			_j0 = \ ix -> { v = _ja(ix); if (v == []) JsonNull() else v[0].second; }
+			_jb = \ arr, n -> getJsonBoolField(arr, n, false);
+			_ji = \ arr, n -> getJsonIntField(arr, n, 0);
+			_js = \ arr, n -> getJsonStringField(arr, n, "");
+			_jd = \ arr, n -> getJsonDoubleField(arr, n, 0.0);
+
+			_jbM = \ arr, n -> getJsonMaybeField(arr, getJsonBoolValue, n, false);
+			_jiM = \ arr, n -> getJsonMaybeField(arr, getJsonIntValue, n, 0);
+			_jsM = \ arr, n -> getJsonMaybeField(arr, getJsonStringValue, n, "");
+			_jdM = \ arr, n -> getJsonMaybeField(arr, getJsonDoubleValue, n, 0.0);
+
+			if (length(jsonData) < 2) {
+				onError("Returned JSON doesn't contain enough data arrays.");
+			} else if (({ f = _jj(1); f == JsonNull() || f == JsonObject([]) })) { 
+				onError("Missing"); 
+			} else {
+				onOK(_ji(_j0(1), "0")  /* id */ );
+			}
+		} else {
+			onError(result)
+		}
+	}, onError, nop1);
+}
+
+
+updatePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
+		[ KeyValue("operation", "updatePlantColor") ], 
+		buildKeyValueForPhp("a0", (val.id)),
+		buildKeyValueForPhp("a1", (val.name)),
+		buildKeyValueForPhp("a2", (val.colorNumber)),
+		buildKeyValueForPhp("a3", (val.colorTypeId)),
+		REQUESTPAR
+	]), \result -> {
+		if (startsWith(result, "OK\n")) {
+			json = parseJson(strRight(result, 3));
+			jsonData = getJsonObjectValue(json, []);
+
+			_jj = \ ix -> getJsonFieldValue(json, i2s(ix), JsonNull());
+			_ja = \ ix -> getJsonObjectValue(_jj(ix), []);
+			_j0 = \ ix -> { v = _ja(ix); if (v == []) JsonNull() else v[0].second; }
+			_jb = \ arr, n -> getJsonBoolField(arr, n, false);
+			_ji = \ arr, n -> getJsonIntField(arr, n, 0);
+			_js = \ arr, n -> getJsonStringField(arr, n, "");
+			_jd = \ arr, n -> getJsonDoubleField(arr, n, 0.0);
+
+			_jbM = \ arr, n -> getJsonMaybeField(arr, getJsonBoolValue, n, false);
+			_jiM = \ arr, n -> getJsonMaybeField(arr, getJsonIntValue, n, 0);
+			_jsM = \ arr, n -> getJsonMaybeField(arr, getJsonStringValue, n, "");
+			_jdM = \ arr, n -> getJsonMaybeField(arr, getJsonDoubleValue, n, 0.0);
+
+			if (length(jsonData) < 1) {
+				onError("Returned JSON doesn't contain enough data arrays.");
+			} else {
+				onOK(1);
+			}
+		} else {
+			onError(result)
+		}
+	}, onError, nop1);
+}
+
+deletePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError : (string) -> void) -> void {
+	REQUESTPAR = [KeyValue("jwt", jwt)];
+	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
+		[ KeyValue("operation", "deletePlantColor") ], 
 		buildKeyValueForPhp("a0", (val.id)),
 		REQUESTPAR
 	]), \result -> {
@@ -923,11 +1154,11 @@ loadPlantsByFamilyId(jwt : string, familieId : int, onOK : ([Plant]) -> void, on
 	}, onError, nop1);
 }
 
-loadPlantsByLeafColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
+loadPlantsByLeafColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
 		[ KeyValue("operation", "loadPlantsByLeafColorId") ], 
-		buildKeyValueForPhp("a0", (colorId)),
+		buildKeyValueForPhp("a0", (plantColorId)),
 		REQUESTPAR
 	]), \result -> {
 		if (startsWith(result, "OK\n")) {
@@ -960,11 +1191,11 @@ loadPlantsByLeafColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, o
 	}, onError, nop1);
 }
 
-loadPlantsByBudColorId(jwt : string, colorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
+loadPlantsByBudColorId(jwt : string, plantColorId : int, onOK : ([Plant]) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
 	oauthDatawarpRequest("/php/plantkeeper_database.php", true, [], concatA([
 		[ KeyValue("operation", "loadPlantsByBudColorId") ], 
-		buildKeyValueForPhp("a0", (colorId)),
+		buildKeyValueForPhp("a0", (plantColorId)),
 		REQUESTPAR
 	]), \result -> {
 		if (startsWith(result, "OK\n")) {

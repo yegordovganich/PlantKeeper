@@ -5,7 +5,8 @@ import generated/plantkeeper_database;
 
 export {
 	logFamily(oldVal : [Family], newVal : Family) -> void;
-	logColor(oldVal : [Color], newVal : Color) -> void;
+	logColorType(oldVal : [ColorType], newVal : ColorType) -> void;
+	logPlantColor(oldVal : [PlantColor], newVal : PlantColor) -> void;
 	logLeafType(oldVal : [LeafType], newVal : LeafType) -> void;
 	logCarePlan(oldVal : [CarePlan], newVal : CarePlan) -> void;
 	logPlant(oldVal : [Plant], newVal : Plant) -> void;
@@ -22,14 +23,25 @@ logFamily(oldVal : [Family], newVal : Family) -> void {
 	}
 }
 
-logColor(oldVal : [Color], newVal : Color) -> void {
+logColorType(oldVal : [ColorType], newVal : ColorType) -> void {
 	if (length(oldVal) == 0) {
-		insertLog(Log(-1, timestamp() |> stamp2time, "colors", newVal.id, "added", "Color: " + (newVal.color |> i2s) + ", \nLeaf: " + (newVal.leaf |> b2s), "Color", "-1", -1), nop1, println);
+		insertLog(Log(-1, timestamp() |> stamp2time, "color_types", newVal.id, "added", "Name: " + newVal.name, "ColorType", "-1", -1), nop1, println);
 	} else {
-		if (oldVal[0].color != newVal.color)
-			insertLog(Log(-1, timestamp() |> stamp2time, "colors", newVal.id, oldVal[0].color |> i2s, newVal.color |> i2s, "color", "-1", -1), nop1, println);
-		if (oldVal[0].leaf != newVal.leaf)
-			insertLog(Log(-1, timestamp() |> stamp2time, "colors", newVal.id, oldVal[0].leaf |> b2s, newVal.leaf |> b2s, "leaf", "-1", -1), nop1, println);
+		if (oldVal[0].name != newVal.name)
+			insertLog(Log(-1, timestamp() |> stamp2time, "color_types", newVal.id, oldVal[0].name, newVal.name, "name", "-1", -1), nop1, println);
+	}
+}
+
+logPlantColor(oldVal : [PlantColor], newVal : PlantColor) -> void {
+	if (length(oldVal) == 0) {
+		insertLog(Log(-1, timestamp() |> stamp2time, "plant_colors", newVal.id, "added", "Name: " + newVal.name + ", \nColor number: " + newVal.colorNumber + ", \nColor type id: " + (newVal.colorTypeId |> i2s), "PlantColor", "-1", -1), nop1, println);
+	} else {
+		if (oldVal[0].name != newVal.name)
+			insertLog(Log(-1, timestamp() |> stamp2time, "plant_colors", newVal.id, oldVal[0].name, newVal.name, "name", "-1", -1), nop1, println);
+		if (oldVal[0].colorNumber != newVal.colorNumber)
+			insertLog(Log(-1, timestamp() |> stamp2time, "plant_colors", newVal.id, oldVal[0].colorNumber, newVal.colorNumber, "color_number", "-1", -1), nop1, println);
+		if (oldVal[0].colorTypeId != newVal.colorTypeId)
+			insertLog(Log(-1, timestamp() |> stamp2time, "plant_colors", newVal.id, oldVal[0].colorTypeId |> i2s, newVal.colorTypeId |> i2s, "color_type_id", "-1", -1), nop1, println);
 	}
 }
 

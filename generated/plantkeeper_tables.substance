@@ -6,7 +6,7 @@ import material/material;
 import material/material_dialog;
 import substantiate/subtable_styles;
 import meta_app/utils;
-import drive/generated/drive_tables;
+import admin_panel/generated/admin_panel_tables;
 
 export {
 	FamilyTable(
@@ -17,12 +17,21 @@ export {
 			style : [SubTableStyle<Family, ?>]
 		) -> Material;
 	
-	ColorTable(
+	ColorTypeTable(
 			manager : MaterialManager,
 			jwt : string, 
-			colors : DynamicBehaviour<[Color]>, 
+			colorTypes : DynamicBehaviour<[ColorType]>, 
+			plantColors : DynamicBehaviour<[PlantColor]>,
+			style : [SubTableStyle<ColorType, ?>]
+		) -> Material;
+	
+	PlantColorTable(
+			manager : MaterialManager,
+			jwt : string, 
+			plantColors : DynamicBehaviour<[PlantColor]>, 
+			colorTypes : DynamicBehaviour<[ColorType]>,
 			plants : DynamicBehaviour<[Plant]>,
-			style : [SubTableStyle<Color, ?>]
+			style : [SubTableStyle<PlantColor, ?>]
 		) -> Material;
 	
 	LeafTypeTable(
@@ -46,7 +55,7 @@ export {
 			jwt : string, 
 			plants : DynamicBehaviour<[Plant]>, 
 			families : DynamicBehaviour<[Family]>,
-			colors : DynamicBehaviour<[Color]>,
+			plantColors : DynamicBehaviour<[PlantColor]>,
 			leafTypes : DynamicBehaviour<[LeafType]>,
 			carePlans : DynamicBehaviour<[CarePlan]>,
 			style : [SubTableStyle<Plant, ?>]
@@ -121,26 +130,25 @@ editFamilyData(manager : MaterialManager, _family : Family, onSave : (Family) ->
 	}
 }
 
-ColorTable(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[Color]>, plants : DynamicBehaviour<[Plant]>, style : [SubTableStyle<Color, ?>]) -> Material {
-	TABLE colors {
-		"Color"
-		( .color <-t int> )
-		(-o .leaf <-c "0 - leaf, 1 - flower/bud"> <-s ""> )
+ColorTypeTable(manager : MaterialManager, jwt : string, colorTypes : DynamicBehaviour<[ColorType]>, plantColors : DynamicBehaviour<[PlantColor]>, style : [SubTableStyle<ColorType, ?>]) -> Material {
+	TABLE colorTypes {
+		"ColorType"
+		( .name )
 		
-		ADD onAddColor(manager, jwt, colors,  defaultColor.fn, onAddHandler.fn, onError.fn);
-		EDIT onEditColor(manager, jwt, colors, colors_selectedIndex, onEdit.fn, onError.fn);
-		DELETE table_references_plants(id, leafColorId ,id, budColorId);
+		ADD onAddColorType(manager, jwt, colorTypes,  defaultColorType.fn, onAddHandler.fn, onError.fn);
+		EDIT onEditColorType(manager, jwt, colorTypes, colorTypes_selectedIndex, onEdit.fn, onError.fn);
+		DELETE table_references_plantColors(id, colorTypeId);
 	}
 }
 
-onAddColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[Color]>,  defaultColor : () -> Color, callback : (Color) -> void, onError : (string) -> void) -> void {
-	_color = defaultColor();
+onAddColorType(manager : MaterialManager, jwt : string, colorTypes : DynamicBehaviour<[ColorType]>,  defaultColorType : () -> ColorType, callback : (ColorType) -> void, onError : (string) -> void) -> void {
+	_colorType = defaultColorType();
 	close = make(false);
-	onAdd = \newColor -> {
-		insertColor(jwt, newColor, \id -> {
-			newColor2 = Color(id, newColor.color, newColor.leaf);
-			dynArrayPush(colors, newColor2);
-			callback(newColor2)
+	onAdd = \newColorType -> {
+		insertColorType(jwt, newColorType, \id -> {
+			newColorType2 = ColorType(id, newColorType.name);
+			dynArrayPush(colorTypes, newColorType2);
+			callback(newColorType2)
 		}, onError);
 		next(close, true);
 	}
@@ -150,17 +158,17 @@ onAddColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[C
 			MDialogUseFrame(),
 			MDialogScroll(),
 		],
-		editColorData(manager, _color, onAdd, onCancel)
+		editColorTypeData(manager, _colorType, onAdd, onCancel)
 	);
 }
 
-onEditColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[Color]>, index : int, onEdit : (Color) -> bool, onError : (string) -> void) -> void {
-	if (index > -1 && index < length(getValue(colors))) {
+onEditColorType(manager : MaterialManager, jwt : string, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (ColorType) -> bool, onError : (string) -> void) -> void {
+	if (index > -1 && index < length(getValue(colorTypes))) {
 		close = make(false);
-		onColorEdit = \editedColor -> {
-			if (onEdit(editedColor)) {
-	 			updateColor(jwt, editedColor, \ok -> {
-					next(colors, replace(getValue(colors), index, editedColor))
+		onColorTypeEdit = \editedColorType -> {
+			if (onEdit(editedColorType)) {
+	 			updateColorType(jwt, editedColorType, \ok -> {
+					next(colorTypes, replace(getValue(colorTypes), index, editedColorType))
 				}, onError);
 				next(close, true);
 			}
@@ -172,19 +180,87 @@ onEditColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[
 				MDialogActions([]),
 				MDialogScroll(),
 			],
-			editColorData(manager, getValue(colors)[index], onColorEdit, onCancel)
+			editColorTypeData(manager, getValue(colorTypes)[index], onColorTypeEdit, onCancel)
 		);
 	}
 }
 
-editColorData(manager : MaterialManager, _color : Color, onSave : (Color) -> void, onCancel : () -> void) -> Material {
-	FORM _color {
-		"Color"
-		[ .color <-t int> : color-icon ]
-		[-o .leaf <-c "0 - leaf, 1 - flower/bud"> <-s ""> ]
+editColorTypeData(manager : MaterialManager, _colorType : ColorType, onSave : (ColorType) -> void, onCancel : () -> void) -> Material {
+	FORM _colorType {
+		"ColorType"
+		[ .name : name-icon ]
 
 		CANCEL onCancel();
-		SAVE onSave(Color(.id, .color, .leaf));
+		SAVE onSave(ColorType(.id, .name));
+	}
+}
+
+PlantColorTable(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, plants : DynamicBehaviour<[Plant]>, style : [SubTableStyle<PlantColor, ?>]) -> Material {
+	TABLE plantColors {
+		"PlantColor"
+		( .name )
+		( .colorNumber )
+		(\/ .colorTypeId FOREIGN colorTypes.id DETAIL (colorTypes.name) )
+		
+		ADD onAddPlantColor(manager, jwt, plantColors, colorTypes,  defaultPlantColor.fn, onAddHandler.fn, onError.fn);
+		EDIT onEditPlantColor(manager, jwt, plantColors, colorTypes, plantColors_selectedIndex, onEdit.fn, onError.fn);
+		DELETE table_references_plants(id, leafColorId ,id, budColorId);
+	}
+}
+
+onAddPlantColor(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>,  defaultPlantColor : () -> PlantColor, callback : (PlantColor) -> void, onError : (string) -> void) -> void {
+	_plantColor = defaultPlantColor();
+	close = make(false);
+	onAdd = \newPlantColor -> {
+		insertPlantColor(jwt, newPlantColor, \id -> {
+			newPlantColor2 = PlantColor(id, newPlantColor.name, newPlantColor.colorNumber, newPlantColor.colorTypeId);
+			dynArrayPush(plantColors, newPlantColor2);
+			callback(newPlantColor2)
+		}, onError);
+		next(close, true);
+	}
+	onCancel = \-> { next(close, true) };
+	ShowMDialog(manager, close,
+		[
+			MDialogUseFrame(),
+			MDialogScroll(),
+		],
+		editPlantColorData(manager, _plantColor, getValue(colorTypes), onAdd, onCancel)
+	);
+}
+
+onEditPlantColor(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (PlantColor) -> bool, onError : (string) -> void) -> void {
+	if (index > -1 && index < length(getValue(plantColors))) {
+		close = make(false);
+		onPlantColorEdit = \editedPlantColor -> {
+			if (onEdit(editedPlantColor)) {
+	 			updatePlantColor(jwt, editedPlantColor, \ok -> {
+					next(plantColors, replace(getValue(plantColors), index, editedPlantColor))
+				}, onError);
+				next(close, true);
+			}
+		}
+		onCancel = \-> { next(close, true) };
+		ShowMDialog(manager, close,
+			[
+				MDialogUseFrame(),
+				MDialogActions([]),
+				MDialogScroll(),
+			],
+			editPlantColorData(manager, getValue(plantColors)[index], getValue(colorTypes), onPlantColorEdit, onCancel)
+		);
+	}
+}
+
+editPlantColorData(manager : MaterialManager, _plantColor : PlantColor, colorTypes : [ColorType], onSave : (PlantColor) -> void, onCancel : () -> void) -> Material {
+	FORM _plantColor {
+		"PlantColor"
+		[ .name : name-icon ]
+		[ .colorNumber : color_number-icon ]
+		[\/ .colorTypeId FOREIGN colorTypes.id DETAIL (colorTypes.name) ]
+
+		CANCEL onCancel();
+		SAVE onSave(PlantColor(.id, .name, .colorNumber, .colorTypeId));
 	}
 }
 
@@ -260,12 +336,12 @@ CarePlanTable(manager : MaterialManager, jwt : string, carePlans : DynamicBehavi
 		"CarePlan"
 		( .name )
 		( .description )
-		( .pour <-t double> <-c "How often you should pour the plant per day. 2 - two times per day, 0.5 - 1 time per two days"> <-s ""> )
+		( .pour <-t double> <-c "How often you should pour the plant per week. 2 - two times per week, 0.5 - 1 time per two weeks"> <-s ""> )
 		(-o .light <-c "0 - the plant prefers dark, 1 - light"> <-s ""> )
 		( .turn <-t double> <-c "Period of turning plant around per week"> <-s ""> )
 		( .tempreture <-t int> <-c "Prefered tempreture"> <-s ""> )
-		( .spray <-t double> <-c "Period of spraying"> <-s ""> )
-		( .wipeLeaves <-t double> <-c "Period of wiping leaves"> <-s ""> )
+		( .spray <-t double> <-c "Period of spraying per week"> <-s ""> )
+		( .wipeLeaves <-t double> <-c "Period of wiping leaves per week"> <-s ""> )
 		
 		ADD onAddCarePlan(manager, jwt, carePlans,  defaultCarePlan.fn, onAddHandler.fn, onError.fn);
 		EDIT onEditCarePlan(manager, jwt, carePlans, carePlans_selectedIndex, onEdit.fn, onError.fn);
@@ -322,36 +398,36 @@ editCarePlanData(manager : MaterialManager, _carePlan : CarePlan, onSave : (Care
 		"CarePlan"
 		[ .name : name-icon ]
 		[ .description : description-icon ]
-		[ .pour <-t double> <-c "How often you should pour the plant per day. 2 - two times per day, 0.5 - 1 time per two days"> <-s ""> : pour-icon ]
+		[ .pour <-t double> <-c "How often you should pour the plant per week. 2 - two times per week, 0.5 - 1 time per two weeks"> <-s ""> : pour-icon ]
 		[-o .light <-c "0 - the plant prefers dark, 1 - light"> <-s ""> ]
 		[ .turn <-t double> <-c "Period of turning plant around per week"> <-s ""> : turn-icon ]
 		[ .tempreture <-t int> <-c "Prefered tempreture"> <-s ""> : tempreture-icon ]
-		[ .spray <-t double> <-c "Period of spraying"> <-s ""> : spray-icon ]
-		[ .wipeLeaves <-t double> <-c "Period of wiping leaves"> <-s ""> : wipe_leaves-icon ]
+		[ .spray <-t double> <-c "Period of spraying per week"> <-s ""> : spray-icon ]
+		[ .wipeLeaves <-t double> <-c "Period of wiping leaves per week"> <-s ""> : wipe_leaves-icon ]
 
 		CANCEL onCancel();
 		SAVE onSave(CarePlan(.id, .name, .description, .pour, .light, .turn, .tempreture, .spray, .wipeLeaves));
 	}
 }
 
-PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, colors : DynamicBehaviour<[Color]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, style : [SubTableStyle<Plant, ?>]) -> Material {
+PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, plantColors : DynamicBehaviour<[PlantColor]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, style : [SubTableStyle<Plant, ?>]) -> Material {
 	TABLE plants {
 		"Plant"
 		( .name )
 		( .height <-t int> )
 		(\/ .familyId FOREIGN families.id DETAIL (families.name) )
-		(\/ .leafColorId FOREIGN colors.id DETAIL (colors.id <-t int>) )
-		(\/ .budColorId FOREIGN colors.id DETAIL (colors.id <-t int>) )
+		(\/ .leafColorId FOREIGN plantColors.id DETAIL (plantColors.name) )
+		(\/ .budColorId FOREIGN plantColors.id DETAIL (plantColors.name) )
 		(\/ .leafTypeId FOREIGN leafTypes.id DETAIL (leafTypes.name) )
 		(\/ .carePlanId FOREIGN carePlans.id DETAIL (carePlans.name) )
 		
-		ADD onAddPlant(manager, jwt, plants, families, colors, leafTypes, carePlans,  defaultPlant.fn, onAddHandler.fn, onError.fn);
-		EDIT onEditPlant(manager, jwt, plants, families, colors, leafTypes, carePlans, plants_selectedIndex, onEdit.fn, onError.fn);
+		ADD onAddPlant(manager, jwt, plants, families, plantColors, leafTypes, carePlans,  defaultPlant.fn, onAddHandler.fn, onError.fn);
+		EDIT onEditPlant(manager, jwt, plants, families, plantColors, leafTypes, carePlans, plants_selectedIndex, onEdit.fn, onError.fn);
 		DELETE;
 	}
 }
 
-onAddPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, colors : DynamicBehaviour<[Color]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>,  defaultPlant : () -> Plant, callback : (Plant) -> void, onError : (string) -> void) -> void {
+onAddPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, plantColors : DynamicBehaviour<[PlantColor]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>,  defaultPlant : () -> Plant, callback : (Plant) -> void, onError : (string) -> void) -> void {
 	_plant = defaultPlant();
 	close = make(false);
 	onAdd = \newPlant -> {
@@ -368,11 +444,11 @@ onAddPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[P
 			MDialogUseFrame(),
 			MDialogScroll(),
 		],
-		editPlantData(manager, _plant, getValue(families), getValue(colors), getValue(leafTypes), getValue(carePlans), onAdd, onCancel)
+		editPlantData(manager, _plant, getValue(families), getValue(plantColors), getValue(leafTypes), getValue(carePlans), onAdd, onCancel)
 	);
 }
 
-onEditPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, colors : DynamicBehaviour<[Color]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, index : int, onEdit : (Plant) -> bool, onError : (string) -> void) -> void {
+onEditPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, plantColors : DynamicBehaviour<[PlantColor]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, index : int, onEdit : (Plant) -> bool, onError : (string) -> void) -> void {
 	if (index > -1 && index < length(getValue(plants))) {
 		close = make(false);
 		onPlantEdit = \editedPlant -> {
@@ -390,19 +466,19 @@ onEditPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[
 				MDialogActions([]),
 				MDialogScroll(),
 			],
-			editPlantData(manager, getValue(plants)[index], getValue(families), getValue(colors), getValue(leafTypes), getValue(carePlans), onPlantEdit, onCancel)
+			editPlantData(manager, getValue(plants)[index], getValue(families), getValue(plantColors), getValue(leafTypes), getValue(carePlans), onPlantEdit, onCancel)
 		);
 	}
 }
 
-editPlantData(manager : MaterialManager, _plant : Plant, families : [Family], colors : [Color], leafTypes : [LeafType], carePlans : [CarePlan], onSave : (Plant) -> void, onCancel : () -> void) -> Material {
+editPlantData(manager : MaterialManager, _plant : Plant, families : [Family], plantColors : [PlantColor], leafTypes : [LeafType], carePlans : [CarePlan], onSave : (Plant) -> void, onCancel : () -> void) -> Material {
 	FORM _plant {
 		"Plant"
 		[ .name : name-icon ]
 		[ .height <-t int> : height-icon ]
 		[\/ .familyId FOREIGN families.id DETAIL (families.name) ]
-		[\/ .leafColorId FOREIGN colors.id DETAIL (colors.id <-t int>) ]
-		[\/ .budColorId FOREIGN colors.id DETAIL (colors.id <-t int>) ]
+		[\/ .leafColorId FOREIGN plantColors.id DETAIL (plantColors.name) ]
+		[\/ .budColorId FOREIGN plantColors.id DETAIL (plantColors.name) ]
 		[\/ .leafTypeId FOREIGN leafTypes.id DETAIL (leafTypes.name) ]
 		[\/ .carePlanId FOREIGN carePlans.id DETAIL (carePlans.name) ]
 

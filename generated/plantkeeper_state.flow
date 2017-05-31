@@ -7,7 +7,6 @@ import admin_panel/authentication/userinfo;
 
 import oauth/oauth_tabs;
 import admin_panel/admin_panel_tabs;
-import drive/drive_tabs;
 import generated/plantkeeper_dbstate;
 
 export {
@@ -15,7 +14,6 @@ export {
 	PlantkeeperElementsDbState : (
 		oauthDbState : OauthDbState,
 		adminPanelDbState : AdminPanelDbState,
-		driveDbState : DriveDbState,
 		plantkeeperDbState : PlantkeeperDbState,
 		
 	);
@@ -61,21 +59,16 @@ loadPlantkeeperElementsDbState(jwt : string, onOK : (PlantkeeperElementsDbState)
 			loadAdminPanelDbState(jwt, fulfill, reject)
 		});
 
-	drivePromise = 
-		Promise(\fulfill, reject -> {
-			loadDriveDbState(jwt, fulfill, reject)
-		});
-
 	plantkeeperPromise = 
 		Promise(\fulfill, reject -> {
 			loadPlantkeeperDbState(jwt, fulfill, reject)
 		});
 
-	promises = [oauthPromise, admin_panelPromise, drivePromise, plantkeeperPromise, ];
+	promises = [oauthPromise, admin_panelPromise, plantkeeperPromise, ];
 
 	doneP(parallelP(promises),
 		\results : flow -> { // Typing is hard. Forgive us
-			PlantkeeperElementsDbState(results[0], results[1], results[2], results[3], ) |> onOK
+			PlantkeeperElementsDbState(results[0], results[1], results[2], ) |> onOK
 		},
 		onError
 	)
@@ -157,14 +150,6 @@ buildPlantkeeperAdminView(state : PlantkeeperState) -> Material {
 			state.userInfo,
 			state.dbState.adminPanelDbState,
 			state.dbState.oauthDbState
-		),
-		// drive
-		buildAdminTabsForDrive(
-			state.manager,
-			state.userInfo,
-			state.dbState.driveDbState,
-			state.dbState.oauthDbState,
-			state.dbState.adminPanelDbState
 		),
 		
 	] |> concatA;

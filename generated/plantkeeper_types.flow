@@ -10,12 +10,19 @@ export {
 	);
 	makeFamily() -> Family;
 	
-	Color(
+	ColorType(
 		id : int,
-		color : int,
-		leaf : bool
+		name : string
 	);
-	makeColor() -> Color;
+	makeColorType() -> ColorType;
+	
+	PlantColor(
+		id : int,
+		name : string,
+		colorNumber : string,
+		colorTypeId : int
+	);
+	makePlantColor() -> PlantColor;
 	
 	LeafType(
 		id : int,
@@ -55,8 +62,12 @@ makeFamily() -> Family {
 	Family(0, "", "");
 }
 
-makeColor() -> Color {
-	Color(0, 0, false);
+makeColorType() -> ColorType {
+	ColorType(0, "");
+}
+
+makePlantColor() -> PlantColor {
+	PlantColor(0, "", "", 0);
 }
 
 makeLeafType() -> LeafType {

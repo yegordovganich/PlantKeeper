@@ -6,7 +6,7 @@ import material/material;
 import material/material_dialog;
 import substantiate/subtable_styles;
 import meta_app/utils;
-import drive/generated/drive_tables;
+import admin_panel/generated/admin_panel_tables;
 
 export {
 	FamilyTable(
@@ -17,12 +17,21 @@ export {
 			style : [SubTableStyle<Family, ?>]
 		) -> Material;
 	
-	ColorTable(
+	ColorTypeTable(
 			manager : MaterialManager,
 			jwt : string, 
-			colors : DynamicBehaviour<[Color]>, 
+			colorTypes : DynamicBehaviour<[ColorType]>, 
+			plantColors : DynamicBehaviour<[PlantColor]>,
+			style : [SubTableStyle<ColorType, ?>]
+		) -> Material;
+	
+	PlantColorTable(
+			manager : MaterialManager,
+			jwt : string, 
+			plantColors : DynamicBehaviour<[PlantColor]>, 
+			colorTypes : DynamicBehaviour<[ColorType]>,
 			plants : DynamicBehaviour<[Plant]>,
-			style : [SubTableStyle<Color, ?>]
+			style : [SubTableStyle<PlantColor, ?>]
 		) -> Material;
 	
 	LeafTypeTable(
@@ -46,7 +55,7 @@ export {
 			jwt : string, 
 			plants : DynamicBehaviour<[Plant]>, 
 			families : DynamicBehaviour<[Family]>,
-			colors : DynamicBehaviour<[Color]>,
+			plantColors : DynamicBehaviour<[PlantColor]>,
 			leafTypes : DynamicBehaviour<[LeafType]>,
 			carePlans : DynamicBehaviour<[CarePlan]>,
 			style : [SubTableStyle<Plant, ?>]
@@ -264,19 +273,19 @@ editFamilyData(manager : MaterialManager, _family : Family, onSave : (Family) ->
 	);
 }
 
-ColorTable(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[Color]>, plants : DynamicBehaviour<[Plant]>, style : [SubTableStyle<Color, ?>]) -> Material {
+ColorTypeTable(manager : MaterialManager, jwt : string, colorTypes : DynamicBehaviour<[ColorType]>, plantColors : DynamicBehaviour<[PlantColor]>, style : [SubTableStyle<ColorType, ?>]) -> Material {
 	
-	defaultColor = extractStruct(style, SubTableDefaultValue(makeColor));
+	defaultColorType = extractStruct(style, SubTableDefaultValue(makeColorType));
 	allowEdit = extractStruct(style, SubTableAllowEdit(true));
 	onEdit = extractStruct(style, SubTableOnEdit(\__ -> true));
 	onError = extractStruct(style, SubTableOnError(println));
 	checkBeforeDelete = extractStruct(style, SubTableCheckBeforeDelete(\__ -> None()));
 	onAddHandler = extractStruct(style, SubTableOnAdd(\__ -> {}));
-	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddColor(manager, jwt, colors, defaultColor.fn, onAddHandler.fn, onError.fn)}));
+	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddColorType(manager, jwt, colorTypes, defaultColorType.fn, onAddHandler.fn, onError.fn)}));
 	onDelete = extractStruct(style, SubTableDeleteEvent(\item, callback -> {
 		callback2 = \-> {
-			index = elemIndex(getValue(colors), item, -1);
-			deleteColor(jwt, item, \ok -> next(colors, removeIndex(getValue(colors), index)), onError.fn);
+			index = elemIndex(getValue(colorTypes), item, -1);
+			deleteColorType(jwt, item, \ok -> next(colorTypes, removeIndex(getValue(colorTypes), index)), onError.fn);
 			callback();
 		}
 		showDeleteConfirmationDialog(manager, jwt, callback2, onError.fn);
@@ -287,64 +296,61 @@ ColorTable(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[C
 			default: acc;
 		}
 	});
-	enabledColumnsB = extractStruct(style, SubTableEnableColumns(make(map(enumFromTo(1, 3), \__ -> true)))).enabledB;
+	enabledColumnsB = extractStruct(style, SubTableEnableColumns(make(map(enumFromTo(1, 2), \__ -> true)))).enabledB;
 
-	colors_selectedIndex = make(-1);
+	colorTypes_selectedIndex = make(-1);
 
 	// Filters
-	filtered_colors = make([]);
+	filtered_colorTypes = make([]);
 	isInlineEdit = make(false);
-	original_colors_selectedIndex = colors_selectedIndex;
+	original_colorTypes_selectedIndex = colorTypes_selectedIndex;
 
-	colorsTouch2MRow = \item : Color -> {
-		item_leaf = make(item.leaf);
+	colorTypesTouch2MRow = \item : ColorType -> {
 		[
-			MText(item.color |> i2s, [MDataRow]),
-			MSwitchControl(item_leaf, [MBlue(500), MEnabled(const(false))]),
+			MText(item.name, [MDataRow]),
 		]
 	};
 
 	table = MConstruct([\ -> 
-		subscribe(colors, \__-> {
-		if (!getValue(isInlineEdit)) nextDistinct(filtered_colors, getValue(colors))
+		subscribe(colorTypes, \__-> {
+		if (!getValue(isInlineEdit)) nextDistinct(filtered_colorTypes, getValue(colorTypes))
 		})
-	], MSelect(fselect2(filtered_colors, enabledColumnsB, FLift2(\f, e -> Pair(f, e))), \itemsEnabled -> {
+	], MSelect(fselect2(filtered_colorTypes, enabledColumnsB, FLift2(\f, e -> Pair(f, e))), \itemsEnabled -> {
 		items = itemsEnabled.first;
 		visibleColumnsIndices = filtermapi(itemsEnabled.second, \i, item -> if (item) Some(i) else None());
 		MDataTable(
 			filtermapi([
-				MColumn(_("Color"), "", 144, [MAutoSort]),
-				MColumn(_("Leaf"), _("0 - leaf, 1 - flower/bud"), 144, [MAutoSort]),
+				MColumn(_("Name"), "", 144, [MAutoSort]),
 				MColumn(_(""), "", length(customIcons) * 28, []),
 			], \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None()),
-			map(items, \item -> filtermapi(colorsTouch2MRow(item), \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None())),
-			[MSingleSelection(colors_selectedIndex), MCondensed(true), MPaginationAutoScaling]
+			map(items, \item -> filtermapi(colorTypesTouch2MRow(item), \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None())),
+			[MSingleSelection(colorTypes_selectedIndex), MCondensed(true), MPaginationAutoScaling]
 		)
 	}));
 
-	colors_actions = [
-		MTextButton(_("ADD"), \ -> {onAddColor(manager, jwt, colors, defaultColor.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
-		MTextButton(_("EDIT"), \ -> {onEditColor(manager, jwt, colors, original_colors_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(colors_selectedIndex, -1)))]),
+	colorTypes_actions = [
+		MTextButton(_("ADD"), \ -> {onAddColorType(manager, jwt, colorTypes, defaultColorType.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
+		MTextButton(_("EDIT"), \ -> {onEditColorType(manager, jwt, colorTypes, original_colorTypes_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(colorTypes_selectedIndex, -1)))]),
 		MTextButton(_("DELETE"), \ -> {
-			filteredItemsVal = getValue(filtered_colors);
-			index = colors_selectedIndex |> fgetValue;
+			filteredItemsVal = getValue(filtered_colorTypes);
+			index = colorTypes_selectedIndex |> fgetValue;
 			errorDeleteMsgM = checkBeforeDelete.fn(filteredItemsVal[index]);
 			if (isNone(errorDeleteMsgM)) {
-				itemsVal = getValue(colors);
-				original_index = original_colors_selectedIndex |> fgetValue;
+				itemsVal = getValue(colorTypes);
+				original_index = original_colorTypes_selectedIndex |> fgetValue;
 				if (index > -1 && index < length(filteredItemsVal)) {
-					if (exists(getValue(plants), \r -> r.leafColorId == filteredItemsVal[index].id)) {
+					if (exists(getValue(plantColors), \r -> r.colorTypeId == filteredItemsVal[index].id)) {
 						ShowMConfirmation(
 							manager,
 							"",
 							"OK",
 							"enter",
-							MText("This color is referenced in existing tables. You can't delete it", [])
+							MText("This colorType is referenced in existing tables. You can't delete it", [])
 						)
 					} else {
 						onDelete.fn(filteredItemsVal[index], \-> {
-						next(colors, removeIndex(itemsVal, original_index));
-						next(colors_selectedIndex, -1);
+						next(colorTypes, removeIndex(itemsVal, original_index));
+						next(colorTypes_selectedIndex, -1);
 						});
 					}
 				}
@@ -364,22 +370,22 @@ ColorTable(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[C
 					);
 				}
 			}
-		}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(colors_selectedIndex, -1)))]),
+		}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(colorTypes_selectedIndex, -1)))]),
 	];
 
-	colors_view = MBorder(16.0, 16.0, 0.0, 0.0, MLines([
+	colorTypes_view = MBorder(16.0, 16.0, 0.0, 0.0, MLines([
 		TFixed(0.0, 8.0),
-		MCols([TFixed(24.0, 0.0),MText(_("Color"), [MTitle])]),
+		MCols([TFixed(24.0, 0.0),MText(_("Color Type"), [MTitle])]),
 		TFixed(0.0, 16.0),
 		table
 	]));
 
-	MLet("body", colors_view,
+	MLet("body", colorTypes_view,
 		MLines([
 			TDisplay("body"),
 			TFixed(0.0, 16.0),
 			MAvailable(
-				MCols(concat([TFillXY()],  if (allowEdit.allow) colors_actions else [TEmpty()] )),
+				MCols(concat([TFillXY()],  if (allowEdit.allow) colorTypes_actions else [TEmpty()] )),
 				TGroup2(
 					TFixed(256.0, 0.0),
 					TScale(const(Factor(1.0, 0.0)), TGhost("body"))
@@ -389,14 +395,14 @@ ColorTable(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[C
 	);
 }
 
-onAddColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[Color]>,  defaultColor : () -> Color, callback : (Color) -> void, onError : (string) -> void) -> void {
-	_color = defaultColor();
+onAddColorType(manager : MaterialManager, jwt : string, colorTypes : DynamicBehaviour<[ColorType]>,  defaultColorType : () -> ColorType, callback : (ColorType) -> void, onError : (string) -> void) -> void {
+	_colorType = defaultColorType();
 	close = make(false);
-	onAdd = \newColor -> {
-		insertColor(jwt, newColor, \id -> {
-			newColor2 = Color(id, newColor.color, newColor.leaf);
-			dynArrayPush(colors, newColor2);
-			callback(newColor2)
+	onAdd = \newColorType -> {
+		insertColorType(jwt, newColorType, \id -> {
+			newColorType2 = ColorType(id, newColorType.name);
+			dynArrayPush(colorTypes, newColorType2);
+			callback(newColorType2)
 		}, onError);
 		next(close, true);
 	}
@@ -406,17 +412,17 @@ onAddColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[C
 			MDialogUseFrame(),
 			MDialogScroll(),
 		],
-		editColorData(manager, _color, onAdd, onCancel)
+		editColorTypeData(manager, _colorType, onAdd, onCancel)
 	);
 }
 
-onEditColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[Color]>, index : int, onEdit : (Color) -> bool, onError : (string) -> void) -> void {
-	if (index > -1 && index < length(getValue(colors))) {
+onEditColorType(manager : MaterialManager, jwt : string, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (ColorType) -> bool, onError : (string) -> void) -> void {
+	if (index > -1 && index < length(getValue(colorTypes))) {
 		close = make(false);
-		onColorEdit = \editedColor -> {
-			if (onEdit(editedColor)) {
-	 			updateColor(jwt, editedColor, \ok -> {
-					next(colors, replace(getValue(colors), index, editedColor))
+		onColorTypeEdit = \editedColorType -> {
+			if (onEdit(editedColorType)) {
+	 			updateColorType(jwt, editedColorType, \ok -> {
+					next(colorTypes, replace(getValue(colorTypes), index, editedColorType))
 				}, onError);
 				next(close, true);
 			}
@@ -428,46 +434,270 @@ onEditColor(manager : MaterialManager, jwt : string, colors : DynamicBehaviour<[
 				MDialogActions([]),
 				MDialogScroll(),
 			],
-			editColorData(manager, getValue(colors)[index], onColorEdit, onCancel)
+			editColorTypeData(manager, getValue(colorTypes)[index], onColorTypeEdit, onCancel)
 		);
 	}
 }
 
-editColorData(manager : MaterialManager, _color : Color, onSave : (Color) -> void, onCancel : () -> void) -> Material {
+editColorTypeData(manager : MaterialManager, _colorType : ColorType, onSave : (ColorType) -> void, onCancel : () -> void) -> Material {
 	
-	_color_color = make(_color.color |> i2s);
-	_color_leaf = make(_color.leaf);
+	_colorType_name = make(_colorType.name);
 
-	_color_actions = [
+	_colorType_actions = [
 		MTextButton(_("CANCEL"), \ -> {onCancel()}, [MBlue(500)], [MShortcut("esc"), MEnabled(const(true))]),
-		MTextButton(_("SAVE"), \ -> {onSave(Color(_color.id, _color_color |> fgetValue |> s2i, _color_leaf |> fgetValue))}, [MBlue(500), MButtonRaised], [MShortcut(""), MEnabled(const(true))]),
+		MTextButton(_("SAVE"), \ -> {onSave(ColorType(_colorType.id, _colorType_name |> fgetValue))}, [MBlue(500), MButtonRaised], [MShortcut(""), MEnabled(const(true))]),
 	];
 
-	_color_view = MBorder(16.0, 16.0, 0.0, 0.0, 
+	_colorType_view = MBorder(16.0, 16.0, 0.0, 0.0, 
 		MLines([
-			MText(_("Color"), [MTitle]),
+			MText(_("Color Type"), [MTitle]),
 			TFixed(0.0, 8.0),
 			MCols([
-				MCenterYIn(MIcon("color", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				MCenterYIn(MIcon("name", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
 				TFixed(16.0, 0.0),
-				MTextInput(_color_color, [MLabel(_("Color")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
-			]),
-			TFixed(0.0, 8.0),
-			MCols([
-				MCenterYIn(MText(_("Leaf"), []), TFixed(0.0, 48.0)),
-				MTooltip(
-					MSwitchControl(_color_leaf, [MBlue(500), MEnabled(const(true))]),
-					MText(_("0 - leaf, 1 - flower/bud"), []), []
-				)
+				MTextInput(_colorType_name, [MLabel(_("Name")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
 			])
 	]));
 
-	MLet("body", _color_view,
+	MLet("body", _colorType_view,
 		MLines([
 			TDisplay("body"),
 			TFixed(0.0, 16.0),
 			MAvailable(
-				MCols(concat([TFillXY()], _color_actions)),
+				MCols(concat([TFillXY()], _colorType_actions)),
+				TGroup2(
+					TFixed(256.0, 0.0),
+					TScale(const(Factor(1.0, 0.0)), TGhost("body"))
+				)
+			)
+		])
+	);
+}
+
+PlantColorTable(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, plants : DynamicBehaviour<[Plant]>, style : [SubTableStyle<PlantColor, ?>]) -> Material {
+	
+	defaultPlantColor = extractStruct(style, SubTableDefaultValue(makePlantColor));
+	allowEdit = extractStruct(style, SubTableAllowEdit(true));
+	onEdit = extractStruct(style, SubTableOnEdit(\__ -> true));
+	onError = extractStruct(style, SubTableOnError(println));
+	checkBeforeDelete = extractStruct(style, SubTableCheckBeforeDelete(\__ -> None()));
+	onAddHandler = extractStruct(style, SubTableOnAdd(\__ -> {}));
+	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddPlantColor(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}));
+	onDelete = extractStruct(style, SubTableDeleteEvent(\item, callback -> {
+		callback2 = \-> {
+			index = elemIndex(getValue(plantColors), item, -1);
+			deletePlantColor(jwt, item, \ok -> next(plantColors, removeIndex(getValue(plantColors), index)), onError.fn);
+			callback();
+		}
+		showDeleteConfirmationDialog(manager, jwt, callback2, onError.fn);
+	}));
+	customIcons : [SubTableCustomIcon] = fold(style, [], \acc, s -> {
+		switch(s) {
+			SubTableCustomIcon(__, __, __): arrayPush(acc, s);
+			default: acc;
+		}
+	});
+	enabledColumnsB = extractStruct(style, SubTableEnableColumns(make(map(enumFromTo(1, 4), \__ -> true)))).enabledB;
+
+	plantColors_selectedIndex = make(-1);
+
+	// Filters
+	filtered_plantColors = make([]);
+	isInlineEdit = make(false);
+	original_plantColors_selectedIndex = plantColors_selectedIndex;
+
+	plantColorsTouch2MRow = \item : PlantColor -> {
+		item_colorTypeId = make(item.colorTypeId);
+		colorTypeId_colorTypes_id = make(findiDef(colorTypes |> getValue, \p -> p.id == item.colorTypeId, -1));
+		colorTypeId_colorTypes_id_unsubscribe_foreign = \ -> subscribe(colorTypeId_colorTypes_id, \i -> if (i != -1) next(item_colorTypeId, getValue(colorTypes)[i].id));
+		[
+			MText(item.name, [MDataRow]),
+			MText(item.colorNumber, [MDataRow]),
+			MConstruct([colorTypeId_colorTypes_id_unsubscribe_foreign], {
+					ind = getValue(colorTypeId_colorTypes_id);
+					if(ind == -1) {
+						MText("", [MDataRow])
+					} else {
+						MText(map(colorTypes |> getValue, \i -> i.name)[ind], [MDataRow])
+					}
+				}
+			),
+		]
+	};
+
+	table = MConstruct([\ -> 
+		subscribe(plantColors, \__-> {
+		if (!getValue(isInlineEdit)) nextDistinct(filtered_plantColors, getValue(plantColors))
+		})
+	], MSelect(fselect2(filtered_plantColors, enabledColumnsB, FLift2(\f, e -> Pair(f, e))), \itemsEnabled -> {
+		items = itemsEnabled.first;
+		visibleColumnsIndices = filtermapi(itemsEnabled.second, \i, item -> if (item) Some(i) else None());
+		MDataTable(
+			filtermapi([
+				MColumn(_("Name"), "", 144, [MAutoSort]),
+				MColumn(_("Color Number"), "", 144, [MAutoSort]),
+				MColumn(_("Color Type Id"), "", 144, [MAutoSort]),
+				MColumn(_(""), "", length(customIcons) * 28, []),
+			], \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None()),
+			map(items, \item -> filtermapi(plantColorsTouch2MRow(item), \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None())),
+			[MSingleSelection(plantColors_selectedIndex), MCondensed(true), MPaginationAutoScaling]
+		)
+	}));
+
+	plantColors_actions = [
+		MTextButton(_("ADD"), \ -> {onAddPlantColor(manager, jwt, plantColors, colorTypes, defaultPlantColor.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
+		MTextButton(_("EDIT"), \ -> {onEditPlantColor(manager, jwt, plantColors, colorTypes, original_plantColors_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plantColors_selectedIndex, -1)))]),
+		MTextButton(_("DELETE"), \ -> {
+			filteredItemsVal = getValue(filtered_plantColors);
+			index = plantColors_selectedIndex |> fgetValue;
+			errorDeleteMsgM = checkBeforeDelete.fn(filteredItemsVal[index]);
+			if (isNone(errorDeleteMsgM)) {
+				itemsVal = getValue(plantColors);
+				original_index = original_plantColors_selectedIndex |> fgetValue;
+				if (index > -1 && index < length(filteredItemsVal)) {
+					if (exists(getValue(plants), \r -> r.leafColorId == filteredItemsVal[index].id)) {
+						ShowMConfirmation(
+							manager,
+							"",
+							"OK",
+							"enter",
+							MText("This plantColor is referenced in existing tables. You can't delete it", [])
+						)
+					} else {
+						onDelete.fn(filteredItemsVal[index], \-> {
+						next(plantColors, removeIndex(itemsVal, original_index));
+						next(plantColors_selectedIndex, -1);
+						});
+					}
+				}
+			} else {
+				errorDeleteMsg = either(errorDeleteMsgM, "");
+				if (errorDeleteMsg != "") {
+					close = make(false);
+					ShowMDialog(manager, close,
+						[
+							MDialogTitle("Delete error"),
+							MDialogUseFrame(),
+							MDialogActions([
+								MTextButton("CLOSE", \ -> next(close, true), [MBlue(500)], [])
+							]),
+						],
+						MText(errorDeleteMsg, [])
+					);
+				}
+			}
+		}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plantColors_selectedIndex, -1)))]),
+	];
+
+	plantColors_view = MBorder(16.0, 16.0, 0.0, 0.0, MLines([
+		TFixed(0.0, 8.0),
+		MCols([TFixed(24.0, 0.0),MText(_("Plant Color"), [MTitle])]),
+		TFixed(0.0, 16.0),
+		table
+	]));
+
+	MLet("body", plantColors_view,
+		MLines([
+			TDisplay("body"),
+			TFixed(0.0, 16.0),
+			MAvailable(
+				MCols(concat([TFillXY()],  if (allowEdit.allow) plantColors_actions else [TEmpty()] )),
+				TGroup2(
+					TFixed(256.0, 0.0),
+					TScale(const(Factor(1.0, 0.0)), TGhost("body"))
+				)
+			)
+		])
+	);
+}
+
+onAddPlantColor(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>,  defaultPlantColor : () -> PlantColor, callback : (PlantColor) -> void, onError : (string) -> void) -> void {
+	_plantColor = defaultPlantColor();
+	close = make(false);
+	onAdd = \newPlantColor -> {
+		insertPlantColor(jwt, newPlantColor, \id -> {
+			newPlantColor2 = PlantColor(id, newPlantColor.name, newPlantColor.colorNumber, newPlantColor.colorTypeId);
+			dynArrayPush(plantColors, newPlantColor2);
+			callback(newPlantColor2)
+		}, onError);
+		next(close, true);
+	}
+	onCancel = \-> { next(close, true) };
+	ShowMDialog(manager, close,
+		[
+			MDialogUseFrame(),
+			MDialogScroll(),
+		],
+		editPlantColorData(manager, _plantColor, getValue(colorTypes), onAdd, onCancel)
+	);
+}
+
+onEditPlantColor(manager : MaterialManager, jwt : string, plantColors : DynamicBehaviour<[PlantColor]>, colorTypes : DynamicBehaviour<[ColorType]>, index : int, onEdit : (PlantColor) -> bool, onError : (string) -> void) -> void {
+	if (index > -1 && index < length(getValue(plantColors))) {
+		close = make(false);
+		onPlantColorEdit = \editedPlantColor -> {
+			if (onEdit(editedPlantColor)) {
+	 			updatePlantColor(jwt, editedPlantColor, \ok -> {
+					next(plantColors, replace(getValue(plantColors), index, editedPlantColor))
+				}, onError);
+				next(close, true);
+			}
+		}
+		onCancel = \-> { next(close, true) };
+		ShowMDialog(manager, close,
+			[
+				MDialogUseFrame(),
+				MDialogActions([]),
+				MDialogScroll(),
+			],
+			editPlantColorData(manager, getValue(plantColors)[index], getValue(colorTypes), onPlantColorEdit, onCancel)
+		);
+	}
+}
+
+editPlantColorData(manager : MaterialManager, _plantColor : PlantColor, colorTypes : [ColorType], onSave : (PlantColor) -> void, onCancel : () -> void) -> Material {
+	
+	_plantColor_name = make(_plantColor.name);
+	_plantColor_colorNumber = make(_plantColor.colorNumber);
+	_plantColor_colorTypeId = make(_plantColor.colorTypeId);
+	colorTypeId_colorTypes_id = make(findiDef(colorTypes, \p -> p.id == _plantColor.colorTypeId, -1));
+	colorTypeId_colorTypes_id_unsubscribe_foreign = \ -> subscribe(colorTypeId_colorTypes_id, \i -> if (i != -1) next(_plantColor_colorTypeId, colorTypes[i].id));
+
+	_plantColor_actions = [
+		MTextButton(_("CANCEL"), \ -> {onCancel()}, [MBlue(500)], [MShortcut("esc"), MEnabled(const(true))]),
+		MTextButton(_("SAVE"), \ -> {onSave(PlantColor(_plantColor.id, _plantColor_name |> fgetValue, _plantColor_colorNumber |> fgetValue, _plantColor_colorTypeId |> fgetValue))}, [MBlue(500), MButtonRaised], [MShortcut(""), MEnabled(const(true))]),
+	];
+
+	_plantColor_view = MBorder(16.0, 16.0, 0.0, 0.0, 
+		MLines([
+			MText(_("Plant Color"), [MTitle]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("name", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MTextInput(_plantColor_name, [MLabel(_("Name")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
+			]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("color_number", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MTextInput(_plantColor_colorNumber, [MLabel(_("Color Number")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
+			]),
+			TFixed(0.0, 8.0),
+			MConstruct([colorTypeId_colorTypes_id_unsubscribe_foreign], 				MCols([
+					MBorder(0., 18.0, 0., 0.0, MText(_("Color Type Id"), [])),
+					TFixed(16.0, 0.0),
+					getDropDownOrAutoComplete(colorTypeId_colorTypes_id, map(colorTypes, \i -> i.name), false, None(), -1, _(""), [])
+				])
+			)
+	]));
+
+	MLet("body", _plantColor_view,
+		MLines([
+			TDisplay("body"),
+			TFixed(0.0, 16.0),
+			MAvailable(
+				MCols(concat([TFillXY()], _plantColor_actions)),
 				TGroup2(
 					TFixed(256.0, 0.0),
 					TScale(const(Factor(1.0, 0.0)), TGhost("body"))
@@ -744,12 +974,12 @@ CarePlanTable(manager : MaterialManager, jwt : string, carePlans : DynamicBehavi
 			filtermapi([
 				MColumn(_("Name"), "", 144, [MAutoSort]),
 				MColumn(_("Description"), "", 144, [MAutoSort]),
-				MColumn(_("Pour"), _("How often you should pour the plant per day. 2 - two times per day, 0.5 - 1 time per two days"), 144, [MAutoSort]),
+				MColumn(_("Pour"), _("How often you should pour the plant per week. 2 - two times per week, 0.5 - 1 time per two weeks"), 144, [MAutoSort]),
 				MColumn(_("Light"), _("0 - the plant prefers dark, 1 - light"), 144, [MAutoSort]),
 				MColumn(_("Turn"), _("Period of turning plant around per week"), 144, [MAutoSort]),
 				MColumn(_("Tempreture"), _("Prefered tempreture"), 144, [MAutoSort]),
-				MColumn(_("Spray"), _("Period of spraying"), 144, [MAutoSort]),
-				MColumn(_("Wipe Leaves"), _("Period of wiping leaves"), 144, [MAutoSort]),
+				MColumn(_("Spray"), _("Period of spraying per week"), 144, [MAutoSort]),
+				MColumn(_("Wipe Leaves"), _("Period of wiping leaves per week"), 144, [MAutoSort]),
 				MColumn(_(""), "", length(customIcons) * 28, []),
 			], \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None()),
 			map(items, \item -> filtermapi(carePlansTouch2MRow(item), \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None())),
@@ -954,7 +1184,7 @@ editCarePlanData(manager : MaterialManager, _carePlan : CarePlan, onSave : (Care
 	);
 }
 
-PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, colors : DynamicBehaviour<[Color]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, style : [SubTableStyle<Plant, ?>]) -> Material {
+PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, plantColors : DynamicBehaviour<[PlantColor]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, style : [SubTableStyle<Plant, ?>]) -> Material {
 	
 	defaultPlant = extractStruct(style, SubTableDefaultValue(makePlant));
 	allowEdit = extractStruct(style, SubTableAllowEdit(true));
@@ -962,7 +1192,7 @@ PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[P
 	onError = extractStruct(style, SubTableOnError(println));
 	checkBeforeDelete = extractStruct(style, SubTableCheckBeforeDelete(\__ -> None()));
 	onAddHandler = extractStruct(style, SubTableOnAdd(\__ -> {}));
-	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddPlant(manager, jwt, plants, families, colors, leafTypes, carePlans, defaultPlant.fn, onAddHandler.fn, onError.fn)}));
+	onAdd = extractStruct(style, SubTableAddEvent(\-> {onAddPlant(manager, jwt, plants, families, plantColors, leafTypes, carePlans, defaultPlant.fn, onAddHandler.fn, onError.fn)}));
 	onDelete = extractStruct(style, SubTableDeleteEvent(\item, callback -> {
 		callback2 = \-> {
 			index = elemIndex(getValue(plants), item, -1);
@@ -991,11 +1221,11 @@ PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[P
 		familyId_families_id = make(findiDef(families |> getValue, \p -> p.id == item.familyId, -1));
 		familyId_families_id_unsubscribe_foreign = \ -> subscribe(familyId_families_id, \i -> if (i != -1) next(item_familyId, getValue(families)[i].id));
 		item_leafColorId = make(item.leafColorId);
-		leafColorId_colors_id = make(findiDef(colors |> getValue, \p -> p.id == item.leafColorId, -1));
-		leafColorId_colors_id_unsubscribe_foreign = \ -> subscribe(leafColorId_colors_id, \i -> if (i != -1) next(item_leafColorId, getValue(colors)[i].id));
+		leafColorId_plantColors_id = make(findiDef(plantColors |> getValue, \p -> p.id == item.leafColorId, -1));
+		leafColorId_plantColors_id_unsubscribe_foreign = \ -> subscribe(leafColorId_plantColors_id, \i -> if (i != -1) next(item_leafColorId, getValue(plantColors)[i].id));
 		item_budColorId = make(item.budColorId);
-		budColorId_colors_id = make(findiDef(colors |> getValue, \p -> p.id == item.budColorId, -1));
-		budColorId_colors_id_unsubscribe_foreign = \ -> subscribe(budColorId_colors_id, \i -> if (i != -1) next(item_budColorId, getValue(colors)[i].id));
+		budColorId_plantColors_id = make(findiDef(plantColors |> getValue, \p -> p.id == item.budColorId, -1));
+		budColorId_plantColors_id_unsubscribe_foreign = \ -> subscribe(budColorId_plantColors_id, \i -> if (i != -1) next(item_budColorId, getValue(plantColors)[i].id));
 		item_leafTypeId = make(item.leafTypeId);
 		leafTypeId_leafTypes_id = make(findiDef(leafTypes |> getValue, \p -> p.id == item.leafTypeId, -1));
 		leafTypeId_leafTypes_id_unsubscribe_foreign = \ -> subscribe(leafTypeId_leafTypes_id, \i -> if (i != -1) next(item_leafTypeId, getValue(leafTypes)[i].id));
@@ -1014,21 +1244,21 @@ PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[P
 					}
 				}
 			),
-			MConstruct([leafColorId_colors_id_unsubscribe_foreign], {
-					ind = getValue(leafColorId_colors_id);
+			MConstruct([leafColorId_plantColors_id_unsubscribe_foreign], {
+					ind = getValue(leafColorId_plantColors_id);
 					if(ind == -1) {
 						MText("", [MDataRow])
 					} else {
-						MText(map(colors |> getValue, \i -> i.id |> i2s)[ind], [MDataRow])
+						MText(map(plantColors |> getValue, \i -> i.name)[ind], [MDataRow])
 					}
 				}
 			),
-			MConstruct([budColorId_colors_id_unsubscribe_foreign], {
-					ind = getValue(budColorId_colors_id);
+			MConstruct([budColorId_plantColors_id_unsubscribe_foreign], {
+					ind = getValue(budColorId_plantColors_id);
 					if(ind == -1) {
 						MText("", [MDataRow])
 					} else {
-						MText(map(colors |> getValue, \i -> i.id |> i2s)[ind], [MDataRow])
+						MText(map(plantColors |> getValue, \i -> i.name)[ind], [MDataRow])
 					}
 				}
 			),
@@ -1077,8 +1307,8 @@ PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[P
 	}));
 
 	plants_actions = [
-		MTextButton(_("ADD"), \ -> {onAddPlant(manager, jwt, plants, families, colors, leafTypes, carePlans, defaultPlant.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
-		MTextButton(_("EDIT"), \ -> {onEditPlant(manager, jwt, plants, families, colors, leafTypes, carePlans, original_plants_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plants_selectedIndex, -1)))]),
+		MTextButton(_("ADD"), \ -> {onAddPlant(manager, jwt, plants, families, plantColors, leafTypes, carePlans, defaultPlant.fn, onAddHandler.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(const(true))]),
+		MTextButton(_("EDIT"), \ -> {onEditPlant(manager, jwt, plants, families, plantColors, leafTypes, carePlans, original_plants_selectedIndex |> fgetValue, onEdit.fn, onError.fn)}, [MBlue(500)], [MShortcut(""), MEnabled(fnot(feq(plants_selectedIndex, -1)))]),
 		MTextButton(_("DELETE"), \ -> {
 			filteredItemsVal = getValue(filtered_plants);
 			index = plants_selectedIndex |> fgetValue;
@@ -1133,7 +1363,7 @@ PlantTable(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[P
 	);
 }
 
-onAddPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, colors : DynamicBehaviour<[Color]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>,  defaultPlant : () -> Plant, callback : (Plant) -> void, onError : (string) -> void) -> void {
+onAddPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, plantColors : DynamicBehaviour<[PlantColor]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>,  defaultPlant : () -> Plant, callback : (Plant) -> void, onError : (string) -> void) -> void {
 	_plant = defaultPlant();
 	close = make(false);
 	onAdd = \newPlant -> {
@@ -1150,11 +1380,11 @@ onAddPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[P
 			MDialogUseFrame(),
 			MDialogScroll(),
 		],
-		editPlantData(manager, _plant, getValue(families), getValue(colors), getValue(leafTypes), getValue(carePlans), onAdd, onCancel)
+		editPlantData(manager, _plant, getValue(families), getValue(plantColors), getValue(leafTypes), getValue(carePlans), onAdd, onCancel)
 	);
 }
 
-onEditPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, colors : DynamicBehaviour<[Color]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, index : int, onEdit : (Plant) -> bool, onError : (string) -> void) -> void {
+onEditPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[Plant]>, families : DynamicBehaviour<[Family]>, plantColors : DynamicBehaviour<[PlantColor]>, leafTypes : DynamicBehaviour<[LeafType]>, carePlans : DynamicBehaviour<[CarePlan]>, index : int, onEdit : (Plant) -> bool, onError : (string) -> void) -> void {
 	if (index > -1 && index < length(getValue(plants))) {
 		close = make(false);
 		onPlantEdit = \editedPlant -> {
@@ -1172,12 +1402,12 @@ onEditPlant(manager : MaterialManager, jwt : string, plants : DynamicBehaviour<[
 				MDialogActions([]),
 				MDialogScroll(),
 			],
-			editPlantData(manager, getValue(plants)[index], getValue(families), getValue(colors), getValue(leafTypes), getValue(carePlans), onPlantEdit, onCancel)
+			editPlantData(manager, getValue(plants)[index], getValue(families), getValue(plantColors), getValue(leafTypes), getValue(carePlans), onPlantEdit, onCancel)
 		);
 	}
 }
 
-editPlantData(manager : MaterialManager, _plant : Plant, families : [Family], colors : [Color], leafTypes : [LeafType], carePlans : [CarePlan], onSave : (Plant) -> void, onCancel : () -> void) -> Material {
+editPlantData(manager : MaterialManager, _plant : Plant, families : [Family], plantColors : [PlantColor], leafTypes : [LeafType], carePlans : [CarePlan], onSave : (Plant) -> void, onCancel : () -> void) -> Material {
 	
 	_plant_name = make(_plant.name);
 	_plant_height = make(_plant.height |> i2s);
@@ -1185,11 +1415,11 @@ editPlantData(manager : MaterialManager, _plant : Plant, families : [Family], co
 	familyId_families_id = make(findiDef(families, \p -> p.id == _plant.familyId, -1));
 	familyId_families_id_unsubscribe_foreign = \ -> subscribe(familyId_families_id, \i -> if (i != -1) next(_plant_familyId, families[i].id));
 	_plant_leafColorId = make(_plant.leafColorId);
-	leafColorId_colors_id = make(findiDef(colors, \p -> p.id == _plant.leafColorId, -1));
-	leafColorId_colors_id_unsubscribe_foreign = \ -> subscribe(leafColorId_colors_id, \i -> if (i != -1) next(_plant_leafColorId, colors[i].id));
+	leafColorId_plantColors_id = make(findiDef(plantColors, \p -> p.id == _plant.leafColorId, -1));
+	leafColorId_plantColors_id_unsubscribe_foreign = \ -> subscribe(leafColorId_plantColors_id, \i -> if (i != -1) next(_plant_leafColorId, plantColors[i].id));
 	_plant_budColorId = make(_plant.budColorId);
-	budColorId_colors_id = make(findiDef(colors, \p -> p.id == _plant.budColorId, -1));
-	budColorId_colors_id_unsubscribe_foreign = \ -> subscribe(budColorId_colors_id, \i -> if (i != -1) next(_plant_budColorId, colors[i].id));
+	budColorId_plantColors_id = make(findiDef(plantColors, \p -> p.id == _plant.budColorId, -1));
+	budColorId_plantColors_id_unsubscribe_foreign = \ -> subscribe(budColorId_plantColors_id, \i -> if (i != -1) next(_plant_budColorId, plantColors[i].id));
 	_plant_leafTypeId = make(_plant.leafTypeId);
 	leafTypeId_leafTypes_id = make(findiDef(leafTypes, \p -> p.id == _plant.leafTypeId, -1));
 	leafTypeId_leafTypes_id_unsubscribe_foreign = \ -> subscribe(leafTypeId_leafTypes_id, \i -> if (i != -1) next(_plant_leafTypeId, leafTypes[i].id));
@@ -1225,17 +1455,17 @@ editPlantData(manager : MaterialManager, _plant : Plant, families : [Family], co
 				])
 			),
 			TFixed(0.0, 8.0),
-			MConstruct([leafColorId_colors_id_unsubscribe_foreign], 				MCols([
+			MConstruct([leafColorId_plantColors_id_unsubscribe_foreign], 				MCols([
 					MBorder(0., 18.0, 0., 0.0, MText(_("Leaf Color Id"), [])),
 					TFixed(16.0, 0.0),
-					getDropDownOrAutoComplete(leafColorId_colors_id, map(colors, \i -> i.id |> i2s), false, None(), -1, _(""), [])
+					getDropDownOrAutoComplete(leafColorId_plantColors_id, map(plantColors, \i -> i.name), false, None(), -1, _(""), [])
 				])
 			),
 			TFixed(0.0, 8.0),
-			MConstruct([budColorId_colors_id_unsubscribe_foreign], 				MCols([
+			MConstruct([budColorId_plantColors_id_unsubscribe_foreign], 				MCols([
 					MBorder(0., 18.0, 0., 0.0, MText(_("Bud Color Id"), [])),
 					TFixed(16.0, 0.0),
-					getDropDownOrAutoComplete(budColorId_colors_id, map(colors, \i -> i.id |> i2s), false, None(), -1, _(""), [])
+					getDropDownOrAutoComplete(budColorId_plantColors_id, map(plantColors, \i -> i.name), false, None(), -1, _(""), [])
 				])
 			),
 			TFixed(0.0, 8.0),

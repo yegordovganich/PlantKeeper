@@ -5,12 +5,12 @@ import promise;
 import generated/plantkeeper_tables;
 import oauth/generated/oauth_dbstate;
 import admin_panel/generated/admin_panel_dbstate;
-import drive/generated/drive_dbstate;
 
 export {
 	PlantkeeperDbState(
 		familiesB : DynamicBehaviour<[Family]>,
-		colorsB : DynamicBehaviour<[Color]>,
+		colorTypesB : DynamicBehaviour<[ColorType]>,
+		plantColorsB : DynamicBehaviour<[PlantColor]>,
 		leafTypesB : DynamicBehaviour<[LeafType]>,
 		carePlansB : DynamicBehaviour<[CarePlan]>,
 		plantsB : DynamicBehaviour<[Plant]>
@@ -27,11 +27,18 @@ export {
 		style : [SubTableStyle<Family, ?>]
 	) -> Material;
 	
-	buildColorTable(
+	buildColorTypeTable(
 		manager : MaterialManager,
 		jwt : string, 
 		plantkeeperDbState : PlantkeeperDbState, 
-		style : [SubTableStyle<Color, ?>]
+		style : [SubTableStyle<ColorType, ?>]
+	) -> Material;
+	
+	buildPlantColorTable(
+		manager : MaterialManager,
+		jwt : string, 
+		plantkeeperDbState : PlantkeeperDbState, 
+		style : [SubTableStyle<PlantColor, ?>]
 	) -> Material;
 	
 	buildLeafTypeTable(
@@ -62,9 +69,14 @@ loadPlantkeeperDbState(jwt : string, onOK : (PlantkeeperDbState) -> void, onErro
 			loadFamilys(jwt, fulfill, reject)
 		});
 	
-	colorsPromise = 
+	colorTypesPromise = 
 		Promise(\fulfill, reject -> { 
-			loadColors(jwt, fulfill, reject)
+			loadColorTypes(jwt, fulfill, reject)
+		});
+	
+	plantColorsPromise = 
+		Promise(\fulfill, reject -> { 
+			loadPlantColors(jwt, fulfill, reject)
 		});
 	
 	leafTypesPromise = 
@@ -82,11 +94,11 @@ loadPlantkeeperDbState(jwt : string, onOK : (PlantkeeperDbState) -> void, onErro
 			loadPlants(jwt, fulfill, reject)
 		});
 	
-	promises = [familiesPromise, colorsPromise, leafTypesPromise, carePlansPromise, plantsPromise];
+	promises = [familiesPromise, colorTypesPromise, plantColorsPromise, leafTypesPromise, carePlansPromise, plantsPromise];
 
 	doneP(parallelP(promises),
 		\results : flow -> { // Typing is hard. Forgive us
-			PlantkeeperDbState(make(results[0]), make(results[1]), make(results[2]), make(results[3]), make(results[4])) |> onOK
+			PlantkeeperDbState(make(results[0]), make(results[1]), make(results[2]), make(results[3]), make(results[4]), make(results[5])) |> onOK
 		},
 		onError
 	)
@@ -95,6 +107,7 @@ loadPlantkeeperDbState(jwt : string, onOK : (PlantkeeperDbState) -> void, onErro
 
 makeEmptyPlantkeeperDbState() -> PlantkeeperDbState {
 	PlantkeeperDbState(
+		make([]), 
 		make([]), 
 		make([]), 
 		make([]), 
@@ -113,11 +126,22 @@ buildFamilyTable(manager : MaterialManager, jwt : string, plantkeeperDbState : P
 	);
 }
 
-buildColorTable(manager : MaterialManager, jwt : string, plantkeeperDbState : PlantkeeperDbState, style : [SubTableStyle<Color, ?>]) -> Material {
-	ColorTable(
+buildColorTypeTable(manager : MaterialManager, jwt : string, plantkeeperDbState : PlantkeeperDbState, style : [SubTableStyle<ColorType, ?>]) -> Material {
+	ColorTypeTable(
 		manager,
 		jwt, 
-		plantkeeperDbState.colorsB,
+		plantkeeperDbState.colorTypesB,
+		plantkeeperDbState.plantColorsB,
+		style
+	);
+}
+
+buildPlantColorTable(manager : MaterialManager, jwt : string, plantkeeperDbState : PlantkeeperDbState, style : [SubTableStyle<PlantColor, ?>]) -> Material {
+	PlantColorTable(
+		manager,
+		jwt, 
+		plantkeeperDbState.plantColorsB,
+		plantkeeperDbState.colorTypesB,
 		plantkeeperDbState.plantsB,
 		style
 	);
@@ -149,7 +173,7 @@ buildPlantTable(manager : MaterialManager, jwt : string, plantkeeperDbState : Pl
 		jwt, 
 		plantkeeperDbState.plantsB,
 		plantkeeperDbState.familiesB,
-		plantkeeperDbState.colorsB,
+		plantkeeperDbState.plantColorsB,
 		plantkeeperDbState.leafTypesB,
 		plantkeeperDbState.carePlansB,
 		style
