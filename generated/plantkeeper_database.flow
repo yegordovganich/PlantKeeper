@@ -681,7 +681,7 @@ loadLeafTypes(jwt : string, onOK : ([LeafType]) -> void, onError : (string) -> v
 				onError("Returned JSON doesn't contain enough data arrays.");
 			} else {
 				onOK(
-					map(_ja(0), \arr -> { LeafType(_ji(arr.second, "0")  /* leaf_types_id */ , _js(arr.second, "1")  /* leaf_types_name */ , _js(arr.second, "2")  /* leaf_types_description */ ); })
+					map(_ja(0), \arr -> { LeafType(_ji(arr.second, "0")  /* leaf_types_id */ , _js(arr.second, "1")  /* leaf_types_name */ , _js(arr.second, "2")  /* leaf_types_description */ , _js(arr.second, "3")  /* leaf_types_picture */ ); })
 				);
 			}
 		} else {
@@ -720,7 +720,7 @@ loadLeafType(jwt : string, id : int, onOK : (LeafType) -> void, onError : (strin
 				onError("Missing"); 
 			} else {
 				onOK(
-					LeafType(_ji(_j0(0), "0")  /* id */ , _js(_j0(0), "1")  /* name */ , _js(_j0(0), "2")  /* description */ )
+					LeafType(_ji(_j0(0), "0")  /* id */ , _js(_j0(0), "1")  /* name */ , _js(_j0(0), "2")  /* description */ , _js(_j0(0), "3")  /* picture */ )
 				);
 			}
 		} else {
@@ -736,6 +736,7 @@ insertLeafType(jwt : string, val : LeafType, onOK : (int) -> void, onError : (st
 		[ KeyValue("operation", "insertLeafType") ], 
 		buildKeyValueForPhp("a0", (val.name)),
 		buildKeyValueForPhp("a1", (val.description)),
+		buildKeyValueForPhp("a2", (val.picture)),
 		REQUESTPAR
 	]), \result -> {
 		if (startsWith(result, "OK\n")) {
@@ -776,6 +777,7 @@ updateLeafType(jwt : string, val : LeafType, onOK : (int) -> void, onError : (st
 		buildKeyValueForPhp("a0", (val.id)),
 		buildKeyValueForPhp("a1", (val.name)),
 		buildKeyValueForPhp("a2", (val.description)),
+		buildKeyValueForPhp("a3", (val.picture)),
 		REQUESTPAR
 	]), \result -> {
 		if (startsWith(result, "OK\n")) {

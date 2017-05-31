@@ -14,9 +14,9 @@ INSERT INTO `plant_colors`(`name`, `color_number`, `color_type_id`) VALUES ('Lig
 INSERT INTO `plant_colors`(`name`, `color_number`, `color_type_id`) VALUES ('Salmon', '#FA8072', 2);
 INSERT INTO `plant_colors`(`name`, `color_number`, `color_type_id`) VALUES ('Olive', '#808000', 3);
 
-INSERT INTO `leaf_types`(`id`, `name`, `description`) VALUES (1, 'Simple', 'single leaf on a branch');
-INSERT INTO `leaf_types`(`id`, `name`, `description`) VALUES (2, 'Compound', 'group of leaves');
-INSERT INTO `leaf_types`(`id`, `name`, `description`) VALUES (3, 'Opposite leaves', 'two opposite leaves on a branch');
+INSERT INTO `leaf_types`(`id`, `name`, `description`, `picture`) VALUES (1, 'Simple', 'single leaf on a branch', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQzw0cHglDcZII37WoT6qKIRSsTsIIZLm22s-VFNB3yNOhcP7gP');
+INSERT INTO `leaf_types`(`id`, `name`, `description`, `picture`) VALUES (2, 'Compound', 'group of leaves', 'http://www.buzzle.com/images/trees/tree-leaves/mimosa-tree-single-leaf.jpg');
+INSERT INTO `leaf_types`(`id`, `name`, `description`, `picture`) VALUES (3, 'Opposite leaves', 'two opposite leaves on a branch', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSl6mhDGTvyf1-cUPWRqi5TIhE05CTnzmlDreI4IqtcxTE3Zx5HJA');
 
 INSERT INTO `care_plans`(`name`, `description`, `pour`, `light`, `turn`, `tempreture`, `spray`, `wipe_leaves`) 
 	VALUES ('Common 1', 'An example of simple common care plan', 2, 1, 1, 21, 1, 0.5);

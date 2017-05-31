@@ -193,27 +193,27 @@ deletePlantColor(jwt : string, val : PlantColor, onOK : (int) -> void, onError :
 
 loadLeafTypes(jwt : string, onOK : ([LeafType]) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	SELECT leaf_types.`id` AS `leaf_types_id`, leaf_types.`name` AS `leaf_types_name`, leaf_types.`description` AS `leaf_types_description`
+	SELECT leaf_types.`id` AS `leaf_types_id`, leaf_types.`name` AS `leaf_types_name`, leaf_types.`description` AS `leaf_types_description`, leaf_types.`picture` AS `leaf_types_picture`
 	FROM leaf_types
 	;
 
-	COLLECT LeafType(`leaf_types_id` : int, `leaf_types_name` : string, `leaf_types_description` : string);
+	COLLECT LeafType(`leaf_types_id` : int, `leaf_types_name` : string, `leaf_types_description` : string, `leaf_types_picture` : string);
 }
 
 loadLeafType(jwt : string, id : int, onOK : (LeafType) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	SELECT leaf_types.`id` AS `id`, leaf_types.`name` AS `name`, leaf_types.`description` AS `description` FROM leaf_types
+	SELECT leaf_types.`id` AS `id`, leaf_types.`name` AS `name`, leaf_types.`description` AS `description`, leaf_types.`picture` AS `picture` FROM leaf_types
 	WHERE leaf_types.`id` = $(id) 
 	;
 
-	RETURN LeafType(`id` : int, `name` : string, `description` : string);
+	RETURN LeafType(`id` : int, `name` : string, `description` : string, `picture` : string);
 }
 
 
 insertLeafType(jwt : string, val : LeafType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	INSERT INTO leaf_types (`name`, `description`)
-	VALUES ($(val.name), $(val.description));
+	INSERT INTO leaf_types (`name`, `description`, `picture`)
+	VALUES ($(val.name), $(val.description), $(val.picture));
 	SELECT LAST_INSERT_ID() AS id;
 	RETURN `id` : int;
 }
@@ -221,7 +221,7 @@ insertLeafType(jwt : string, val : LeafType, onOK : (int) -> void, onError : (st
 
 updateLeafType(jwt : string, val : LeafType, onOK : (int) -> void, onError : (string) -> void) -> void {
 	REQUESTPAR = [KeyValue("jwt", jwt)];
-	UPDATE leaf_types SET `name` = $(val.name), `description` = $(val.description)
+	UPDATE leaf_types SET `name` = $(val.name), `description` = $(val.description), `picture` = $(val.picture)
 	WHERE `id` = $(val.id)
 	;
 

@@ -269,6 +269,7 @@ LeafTypeTable(manager : MaterialManager, jwt : string, leafTypes : DynamicBehavi
 		"LeafType"
 		( .name )
 		( .description )
+		( .picture )
 		
 		ADD onAddLeafType(manager, jwt, leafTypes,  defaultLeafType.fn, onAddHandler.fn, onError.fn);
 		EDIT onEditLeafType(manager, jwt, leafTypes, leafTypes_selectedIndex, onEdit.fn, onError.fn);
@@ -281,7 +282,7 @@ onAddLeafType(manager : MaterialManager, jwt : string, leafTypes : DynamicBehavi
 	close = make(false);
 	onAdd = \newLeafType -> {
 		insertLeafType(jwt, newLeafType, \id -> {
-			newLeafType2 = LeafType(id, newLeafType.name, newLeafType.description);
+			newLeafType2 = LeafType(id, newLeafType.name, newLeafType.description, newLeafType.picture);
 			dynArrayPush(leafTypes, newLeafType2);
 			callback(newLeafType2)
 		}, onError);
@@ -325,9 +326,10 @@ editLeafTypeData(manager : MaterialManager, _leafType : LeafType, onSave : (Leaf
 		"LeafType"
 		[ .name : name-icon ]
 		[ .description : description-icon ]
+		[ .picture : picture-icon ]
 
 		CANCEL onCancel();
-		SAVE onSave(LeafType(.id, .name, .description));
+		SAVE onSave(LeafType(.id, .name, .description, .picture));
 	}
 }
 

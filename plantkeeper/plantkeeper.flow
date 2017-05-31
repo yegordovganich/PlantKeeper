@@ -10,8 +10,6 @@ import meta_app/version;
 // This file is generated. Minimize manual changes to make regeneration easy
 
 main() {
-	// println(parseHex("ADFF2F"));
-	// quit(0);
 	title = "Plantkeeper";
 
 	setPictureServerURL(getBaseAppUrl());

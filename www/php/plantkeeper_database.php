@@ -101,11 +101,11 @@ function insertFamily(/* $(val.name) */ $a0, /* $(val.description) */ $a1) {
 }
 
 
-function insertLeafType(/* $(val.name) */ $a0, /* $(val.description) */ $a1) {
+function insertLeafType(/* $(val.name) */ $a0, /* $(val.description) */ $a1, /* $(val.picture) */ $a2) {
 	$result = array();
-	$sql = "INSERT INTO leaf_types (`name`, `description`)
-	VALUES (:a0 , :a1 )";
-	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1));
+	$sql = "INSERT INTO leaf_types (`name`, `description`, `picture`)
+	VALUES (:a0 , :a1 , :a2 )";
+	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1, 'a2' => $a2));
 	$sql = "SELECT LAST_INSERT_ID() AS id";
 	$result[] = exec_query("", $sql, array());
 
@@ -199,7 +199,7 @@ function loadFamilys() {
 
 function loadLeafType(/* $(id) */ $a0) {
 	$result = array();
-	$sql = "SELECT leaf_types.`id` AS `id`, leaf_types.`name` AS `name`, leaf_types.`description` AS `description` FROM leaf_types
+	$sql = "SELECT leaf_types.`id` AS `id`, leaf_types.`name` AS `name`, leaf_types.`description` AS `description`, leaf_types.`picture` AS `picture` FROM leaf_types
 	WHERE leaf_types.`id` = :a0";
 	$result[] = exec_query("", $sql, array('a0' => $a0));
 
@@ -209,7 +209,7 @@ function loadLeafType(/* $(id) */ $a0) {
 
 function loadLeafTypes() {
 	$result = array();
-	$sql = "SELECT leaf_types.`id` AS `leaf_types_id`, leaf_types.`name` AS `leaf_types_name`, leaf_types.`description` AS `leaf_types_description`
+	$sql = "SELECT leaf_types.`id` AS `leaf_types_id`, leaf_types.`name` AS `leaf_types_name`, leaf_types.`description` AS `leaf_types_description`, leaf_types.`picture` AS `leaf_types_picture`
 	FROM leaf_types";
 	$result[] = exec_query("", $sql, array());
 
@@ -344,10 +344,10 @@ function updateFamily(/* $(val.id) */ $a0, /* $(val.name) */ $a1, /* $(val.descr
 }
 
 
-function updateLeafType(/* $(val.id) */ $a0, /* $(val.name) */ $a1, /* $(val.description) */ $a2) {
+function updateLeafType(/* $(val.id) */ $a0, /* $(val.name) */ $a1, /* $(val.description) */ $a2, /* $(val.picture) */ $a3) {
 	$result = array();
-	$sql = "UPDATE leaf_types SET `name` = :a1 , `description` = :a2 WHERE `id` = :a0";
-	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1, 'a2' => $a2));
+	$sql = "UPDATE leaf_types SET `name` = :a1 , `description` = :a2 , `picture` = :a3 WHERE `id` = :a0";
+	$result[] = exec_query("", $sql, array('a0' => $a0, 'a1' => $a1, 'a2' => $a2, 'a3' => $a3));
 
 	return $result;
 }
@@ -429,7 +429,8 @@ switch (getParameter("operation")) {
 	case "insertLeafType":
 		$a0 = getParameter("a0");
 		$a1 = getParameter("a1");
-		$res = insertLeafType($a0, $a1);
+		$a2 = getParameter("a2");
+		$res = insertLeafType($a0, $a1, $a2);
 		printOkAndJson($res);
 		break;
 	case "insertPlant":
@@ -564,7 +565,8 @@ switch (getParameter("operation")) {
 		$a0 = getParameter("a0");
 		$a1 = getParameter("a1");
 		$a2 = getParameter("a2");
-		$res = updateLeafType($a0, $a1, $a2);
+		$a3 = getParameter("a3");
+		$res = updateLeafType($a0, $a1, $a2, $a3);
 		printOkAndJson($res);
 		break;
 	case "updatePlant":

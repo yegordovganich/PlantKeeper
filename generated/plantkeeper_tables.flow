@@ -60,6 +60,7 @@ export {
 			carePlans : DynamicBehaviour<[CarePlan]>,
 			style : [SubTableStyle<Plant, ?>]
 		) -> Material;
+	
 }
 
 FamilyTable(manager : MaterialManager, jwt : string, families : DynamicBehaviour<[Family]>, plants : DynamicBehaviour<[Plant]>, style : [SubTableStyle<Family, ?>]) -> Material {
@@ -729,7 +730,7 @@ LeafTypeTable(manager : MaterialManager, jwt : string, leafTypes : DynamicBehavi
 			default: acc;
 		}
 	});
-	enabledColumnsB = extractStruct(style, SubTableEnableColumns(make(map(enumFromTo(1, 3), \__ -> true)))).enabledB;
+	enabledColumnsB = extractStruct(style, SubTableEnableColumns(make(map(enumFromTo(1, 4), \__ -> true)))).enabledB;
 
 	leafTypes_selectedIndex = make(-1);
 
@@ -742,6 +743,7 @@ LeafTypeTable(manager : MaterialManager, jwt : string, leafTypes : DynamicBehavi
 		[
 			MText(item.name, [MDataRow]),
 			MText(item.description, [MDataRow]),
+			MText(item.picture, [MDataRow]),
 		]
 	};
 
@@ -756,6 +758,7 @@ LeafTypeTable(manager : MaterialManager, jwt : string, leafTypes : DynamicBehavi
 			filtermapi([
 				MColumn(_("Name"), "", 144, [MAutoSort]),
 				MColumn(_("Description"), "", 144, [MAutoSort]),
+				MColumn(_("Picture"), "", 144, [MAutoSort]),
 				MColumn(_(""), "", length(customIcons) * 28, []),
 			], \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None()),
 			map(items, \item -> filtermapi(leafTypesTouch2MRow(item), \i, it -> if (contains(visibleColumnsIndices, i)) Some(it) else None())),
@@ -835,7 +838,7 @@ onAddLeafType(manager : MaterialManager, jwt : string, leafTypes : DynamicBehavi
 	close = make(false);
 	onAdd = \newLeafType -> {
 		insertLeafType(jwt, newLeafType, \id -> {
-			newLeafType2 = LeafType(id, newLeafType.name, newLeafType.description);
+			newLeafType2 = LeafType(id, newLeafType.name, newLeafType.description, newLeafType.picture);
 			dynArrayPush(leafTypes, newLeafType2);
 			callback(newLeafType2)
 		}, onError);
@@ -878,10 +881,11 @@ editLeafTypeData(manager : MaterialManager, _leafType : LeafType, onSave : (Leaf
 	
 	_leafType_name = make(_leafType.name);
 	_leafType_description = make(_leafType.description);
+	_leafType_picture = make(_leafType.picture);
 
 	_leafType_actions = [
 		MTextButton(_("CANCEL"), \ -> {onCancel()}, [MBlue(500)], [MShortcut("esc"), MEnabled(const(true))]),
-		MTextButton(_("SAVE"), \ -> {onSave(LeafType(_leafType.id, _leafType_name |> fgetValue, _leafType_description |> fgetValue))}, [MBlue(500), MButtonRaised], [MShortcut(""), MEnabled(const(true))]),
+		MTextButton(_("SAVE"), \ -> {onSave(LeafType(_leafType.id, _leafType_name |> fgetValue, _leafType_description |> fgetValue, _leafType_picture |> fgetValue))}, [MBlue(500), MButtonRaised], [MShortcut(""), MEnabled(const(true))]),
 	];
 
 	_leafType_view = MBorder(16.0, 16.0, 0.0, 0.0, 
@@ -898,6 +902,12 @@ editLeafTypeData(manager : MaterialManager, _leafType : LeafType, onSave : (Leaf
 				MCenterYIn(MIcon("description", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
 				TFixed(16.0, 0.0),
 				MTextInput(_leafType_description, [MLabel(_("Description")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
+			]),
+			TFixed(0.0, 8.0),
+			MCols([
+				MCenterYIn(MIcon("picture", [MIconSize(standardIconSize * 1.5)]), TFixed(0.0, 72.0)),
+				TFixed(16.0, 0.0),
+				MTextInput(_leafType_picture, [MLabel(_("Picture")), MWidth(400.0), MMaxLines(1),MFloatingLabel(), ], [])
 			])
 	]));
 

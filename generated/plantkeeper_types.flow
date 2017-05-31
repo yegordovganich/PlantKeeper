@@ -27,7 +27,8 @@ export {
 	LeafType(
 		id : int,
 		name : string,
-		description : string
+		description : string,
+		picture : string
 	);
 	makeLeafType() -> LeafType;
 	
@@ -71,7 +72,7 @@ makePlantColor() -> PlantColor {
 }
 
 makeLeafType() -> LeafType {
-	LeafType(0, "", "");
+	LeafType(0, "", "", "");
 }
 
 makeCarePlan() -> CarePlan {

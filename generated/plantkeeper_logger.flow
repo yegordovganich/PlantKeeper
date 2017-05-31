@@ -47,12 +47,14 @@ logPlantColor(oldVal : [PlantColor], newVal : PlantColor) -> void {
 
 logLeafType(oldVal : [LeafType], newVal : LeafType) -> void {
 	if (length(oldVal) == 0) {
-		insertLog(Log(-1, timestamp() |> stamp2time, "leaf_types", newVal.id, "added", "Name: " + newVal.name + ", \nDescription: " + newVal.description, "LeafType", "-1", -1), nop1, println);
+		insertLog(Log(-1, timestamp() |> stamp2time, "leaf_types", newVal.id, "added", "Name: " + newVal.name + ", \nDescription: " + newVal.description + ", \nPicture: " + newVal.picture, "LeafType", "-1", -1), nop1, println);
 	} else {
 		if (oldVal[0].name != newVal.name)
 			insertLog(Log(-1, timestamp() |> stamp2time, "leaf_types", newVal.id, oldVal[0].name, newVal.name, "name", "-1", -1), nop1, println);
 		if (oldVal[0].description != newVal.description)
 			insertLog(Log(-1, timestamp() |> stamp2time, "leaf_types", newVal.id, oldVal[0].description, newVal.description, "description", "-1", -1), nop1, println);
+		if (oldVal[0].picture != newVal.picture)
+			insertLog(Log(-1, timestamp() |> stamp2time, "leaf_types", newVal.id, oldVal[0].picture, newVal.picture, "picture", "-1", -1), nop1, println);
 	}
 }
 
