@@ -65,7 +65,7 @@ buildPlantkeeperHomeView(state : PlantkeeperState) -> Material {
 				state.userInfo.jwt,
 				state.dbState.plantkeeperDbState,
 				[
-					SubTableDefaultValue(makeCarePlan),
+					SubTableDefaultValue(makeCarePlanCustom),
 					SubTableAllowEdit(true)
 				]
 			)),
@@ -74,7 +74,7 @@ buildPlantkeeperHomeView(state : PlantkeeperState) -> Material {
 				state.userInfo.jwt,
 				state.dbState.plantkeeperDbState,
 				[
-					SubTableDefaultValue(makePlant),
+					SubTableDefaultValue(makePlantCustom),
 					SubTableAllowEdit(true)
 				]
 			)),
